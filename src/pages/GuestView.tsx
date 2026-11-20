@@ -89,7 +89,7 @@ function NameForm({
       <form className="form" onSubmit={submit}>
         <label className="field">
           <span className="t-label">Имя</span>
-          <input
+          <input className="input"
             id="guest-name"
             value={value}
             onChange={(e) => setValue(e.target.value)}

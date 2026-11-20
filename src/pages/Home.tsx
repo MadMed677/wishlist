@@ -45,7 +45,7 @@ function Landing() {
           Составь список желаний и отправь ссылку друзьям. Они договорятся, кто что дарит, а ты не узнаешь кто — сюрприз
           сохранится.
         </p>
-        <button className="btn btn-primary btn-lg btn-block" onClick={login} disabled={busy}>
+        <button className="btn btn-primary btn-lg btn-block" onClick={login} disabled={busy} aria-busy={busy}>
           <GoogleIcon />
           {busy ? 'Вхожу…' : 'Войти через Google'}
         </button>
@@ -127,7 +127,7 @@ function MyLists({ uid, name }: { uid: string; name: string }) {
           <form className="form" onSubmit={create}>
             <label className="field">
               <span className="t-label">Название</span>
-              <input
+              <input className="input"
                 id="list-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -138,14 +138,14 @@ function MyLists({ uid, name }: { uid: string; name: string }) {
             </label>
             <label className="field">
               <span className="t-label">Дата события</span>
-              <input id="list-date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+              <input className="input" id="list-date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
             </label>
             <WishesField id="list-wishes" value={wishes} onChange={setWishes} rows={3} label="Пожелания для гостей (необязательно)" />
             <p className="t-small muted" style={{ marginTop: -6 }}>
               Что тебе в целом нравится и чего дарить не стоит. Можно дописать потом.
             </p>
             <ErrorBox>{error}</ErrorBox>
-            <button className="btn btn-primary" type="submit" disabled={busy}>
+            <button className="btn btn-primary" type="submit" disabled={busy} aria-busy={busy}>
               {busy ? 'Создаю…' : 'Создать'}
             </button>
           </form>

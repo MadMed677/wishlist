@@ -4,6 +4,7 @@ import { App } from './App';
 import { AuthProvider } from './auth';
 import { applyTheme, loadTheme } from './utils';
 import './styles/tokens.css';
+import './styles/components.css';
 import './styles/app.css';
 
 applyTheme(loadTheme());

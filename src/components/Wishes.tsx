@@ -114,7 +114,7 @@ export function WishesField({
           </button>
         ))}
       </div>
-      <textarea
+      <textarea className="input"
         ref={ref}
         id={id}
         value={value}
@@ -169,7 +169,7 @@ export function WishesForm({
         <button type="button" className="btn desktop-only" onClick={onCancel}>
           Отмена
         </button>
-        <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
+        <button className="btn btn-primary btn-lg" type="submit" disabled={busy} aria-busy={busy}>
           {busy ? 'Сохраняю…' : 'Сохранить'}
         </button>
       </div>

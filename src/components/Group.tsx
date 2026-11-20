@@ -135,7 +135,7 @@ export function GroupStartForm({
       </ol>
       <label className="field">
         <span className="t-label">Комментарий для участников (необязательно)</span>
-        <textarea
+        <textarea className="input"
           id="group-note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -149,7 +149,7 @@ export function GroupStartForm({
         <button type="button" className="btn desktop-only" onClick={onCancel}>
           Отмена
         </button>
-        <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
+        <button className="btn btn-primary btn-lg" type="submit" disabled={busy} aria-busy={busy}>
           <UsersIcon size={18} />
           {busy ? 'Открываю…' : 'Открыть сбор'}
         </button>
@@ -189,7 +189,7 @@ export function GroupNoteForm({
       <p className="t-small muted">Его видят все участники и другие гости. Автор списка — нет.</p>
       <label className="field">
         <span className="t-label">Комментарий для участников</span>
-        <textarea
+        <textarea className="input"
           id="group-note-edit"
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -204,7 +204,7 @@ export function GroupNoteForm({
         <button type="button" className="btn desktop-only" onClick={onCancel}>
           Отмена
         </button>
-        <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
+        <button className="btn btn-primary btn-lg" type="submit" disabled={busy} aria-busy={busy}>
           {busy ? 'Сохраняю…' : 'Сохранить'}
         </button>
       </div>

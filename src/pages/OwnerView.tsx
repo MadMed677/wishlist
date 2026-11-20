@@ -205,7 +205,7 @@ function ShareBox({ listId, title }: { listId: string; title: string }) {
       <span className="t-small muted mobile-only">Отправь эту ссылку друзьям:</span>
       <span className="t-label desktop-only">Ссылка для друзей</span>
       <div className="share-row">
-        <input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Ссылка на вишлист" />
+        <input className="input" readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Ссылка на вишлист" />
         <button className="btn btn-primary mobile-only" onClick={share}>
           {copied ? <CheckIcon size={16} /> : <ShareIcon size={16} />}
           {copied ? 'Скопировано' : 'Поделиться'}
@@ -242,18 +242,18 @@ function ListForm({ list, onDone }: { list: Wishlist; onDone: () => void }) {
     <form className="form" onSubmit={submit}>
       <label className="field">
         <span className="t-label">Название</span>
-        <input id="edit-list-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} required />
+        <input className="input" id="edit-list-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} required />
       </label>
       <label className="field">
         <span className="t-label">Дата события</span>
-        <input id="edit-list-date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+        <input className="input" id="edit-list-date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
       </label>
       <ErrorBox>{error}</ErrorBox>
       <div className="form-actions">
         <button type="button" className="btn desktop-only" onClick={onDone}>
           Отмена
         </button>
-        <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
+        <button className="btn btn-primary btn-lg" type="submit" disabled={busy} aria-busy={busy}>
           {busy ? 'Сохраняю…' : 'Сохранить'}
         </button>
       </div>

@@ -71,6 +71,7 @@ wishlists/{listId}                     { ownerUid, ownerName, title, eventDate, 
 - Дизайн-система «Вишлист»: https://claude.ai/artifact/QfvPkkecFeLMovM4ntmjA5 ; экраны и переходы (страницы «Телефон» и «Компьютер»): https://claude.ai/artifact/LNycnQHYLxqqZgGDrYCQDW
 - Цены в примерах и плейсхолдерах — в тенге (₸).
 - Токены: `src/styles/tokens.css` (значения из `design/tokens.json`). В `src/styles/app.css` и компонентах — только `var(--токен)`, никаких литеральных цветов.
+- Кнопки и поля — компоненты дизайн-системы «Button» и «Input»: `src/styles/components.css` = копия `components/bundle.css` из дизайн-системы (меняешь — меняй в обоих местах). Классы: `btn` + `btn-primary` / `btn-danger` / `btn-ghost`, размеры `btn-sm` / `btn-lg` / `btn-icon`; поля — `input` (+ `aria-invalid` и `<span class="field-error">` для ошибки). У всех есть hover / active / focus-visible / disabled; при отправке формы — `disabled` + `aria-busy` (спиннер).
 - Один шрифт — Manrope (разные начертания 400–800). Другие шрифты не добавлять.
 - Основной цвет — синий `--primary`. «Занято другим» — оранжевые `--reserved-*`, «моя бронь» — зелёные `--mine-*`.
 - Статус брони у любой карточки (желание, «Я дарю другое», превью) — только полоса сверху + рамка того же цвета (`CardMark` в `src/components/ItemCard.tsx`). Отдельных плашек статуса внутри карточки не делать.
