@@ -54,6 +54,7 @@ wishlists/{listId}                     { ownerUid, ownerName, title, eventDate, 
 - `reservations`: читают все; `create` — если `request.resource.data.uid == request.auth.uid` и пользователь не владелец; `delete` — сам бронировавший или владелец.
 - `reservationDetails`, `guestGifts`: read — только если `request.auth.uid != ownerUid` списка; write — только свои документы (uid == auth.uid), не владелец.
 - Известное ограничение: автор в инкогнито = гость. Это принимаем.
+- **Правила НЕ деплоятся вместе с сайтом.** GitHub Actions выкладывает только фронтенд. Если менялся `firestore.rules`, в конце задачи обязательно попроси владельца опубликовать их (README → «Правила доступа»), иначе новые функции упрутся в permission-denied.
 
 ## Настройка, которую делает человек (не код)
 

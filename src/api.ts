@@ -5,6 +5,7 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  getDoc,
   onSnapshot,
   query,
   runTransaction,
@@ -213,6 +214,15 @@ export function reserveItem(listId: string, itemId: string, uid: string, guestNa
   batch.set(doc(sub(listId, 'reservations'), itemId), { uid, createdAt: serverTimestamp() });
   batch.set(doc(sub(listId, 'reservationDetails'), itemId), { uid, guestName });
   return batch.commit();
+}
+
+/** Есть ли сейчас бронь на пункт — чтобы отличить «кто-то успел раньше» от отказа правил. */
+export async function isReserved(listId: string, itemId: string): Promise<boolean> {
+  try {
+    return (await getDoc(doc(sub(listId, 'reservations'), itemId))).exists();
+  } catch {
+    return false;
+  }
 }
 
 export function cancelReservation(listId: string, itemId: string) {

@@ -5,6 +5,7 @@ import {
   cancelReservation,
   deleteGuestGift,
   GroupGoneError,
+  isReserved,
   joinGroup,
   leaveGroup,
   startGroup,
@@ -147,6 +148,12 @@ function GuestList({
   const resByItem = new Map(reservations.data.map((r) => [r.id, r]));
   const detailsByItem = new Map(details.data.map((d) => [d.id, d]));
 
+  // permission-denied бывает и при гонке (кто-то успел раньше), и когда на сервере старые правила.
+  const deniedText = async (item: Item) =>
+    (await isReserved(list.id, item.id))
+      ? `Ой, «${item.title}» только что забронировал кто-то другой. Выбери что-нибудь ещё.`
+      : 'Не получилось: сервер отклонил запрос. Похоже, в Firebase устарели правила доступа — напиши автору списка, пусть обновит их (инструкция в README).';
+
   const reserve = async (item: Item) => {
     setBusyItem(item.id);
     setError('');
@@ -154,17 +161,13 @@ function GuestList({
       await reserveItem(list.id, item.id, user.uid, name);
     } catch (e) {
       const code = (e as { code?: string }).code;
-      setError(
-        code === 'permission-denied'
-          ? `Ой, «${item.title}» только что забронировал кто-то другой. Выбери что-нибудь ещё.`
-          : errorText(e),
-      );
+      setError(code === 'permission-denied' ? await deniedText(item) : errorText(e));
     } finally {
       setBusyItem(null);
     }
   };
 
-  const run = async (item: Item, action: () => Promise<unknown>, raceText?: string) => {
+  const run = async (item: Item, action: () => Promise<unknown>) => {
     setBusyItem(item.id);
     setError('');
     try {
@@ -174,8 +177,8 @@ function GuestList({
       setError(
         e instanceof GroupGoneError
           ? 'Этот сбор уже закрыт — все участники вышли.'
-          : code === 'permission-denied' && raceText
-            ? raceText
+          : code === 'permission-denied'
+            ? await deniedText(item)
             : errorText(e),
       );
     } finally {
@@ -415,7 +418,7 @@ function GuestList({
               } catch (e) {
                 if ((e as { code?: string }).code === 'permission-denied') {
                   close();
-                  setError(`Ой, «${item.title}» только что забронировал кто-то другой. Выбери что-нибудь ещё.`);
+                  setError(await deniedText(item));
                   return;
                 }
                 throw e;
