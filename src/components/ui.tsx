@@ -1,4 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { inAppBrowser } from '../account';
 import { AlertIcon, CloseIcon } from './icons';
 
 export function Spinner({ label = 'Загрузка…' }: { label?: string }) {
@@ -16,6 +17,33 @@ export function ErrorBox({ children }: { children: ReactNode }) {
     <div className="error t-small" role="alert">
       <AlertIcon />
       <span>{children}</span>
+    </div>
+  );
+}
+
+/** Ссылку открыли внутри Telegram/Instagram…: Google там вход не пускает — просим открыть в браузере. */
+export function InAppHint() {
+  const [app] = useState(inAppBrowser);
+  const [copied, setCopied] = useState(false);
+  if (!app) return null;
+  const copy = () => {
+    navigator.clipboard
+      ?.writeText(location.href)
+      .then(() => setCopied(true))
+      .catch(() => {});
+  };
+  return (
+    <div className="inapp-hint t-small" role="note">
+      <AlertIcon />
+      <div>
+        <p>
+          Ссылка открыта внутри {app} — тут Google может не пустить. Открой её в Safari или Chrome (меню ⋯ → «Открыть в
+          браузере») и войди там.
+        </p>
+        <button className="btn btn-sm" type="button" onClick={copy}>
+          {copied ? 'Ссылка скопирована' : 'Скопировать ссылку'}
+        </button>
+      </div>
     </div>
   );
 }

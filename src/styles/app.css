@@ -240,6 +240,24 @@ button {
   flex-shrink: 0;
 }
 
+.inapp-hint {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-md);
+  background: var(--reserved-soft);
+  color: var(--reserved-ink);
+}
+
+.inapp-hint svg {
+  flex-shrink: 0;
+}
+
+.inapp-hint p {
+  margin: 0 0 var(--space-2);
+}
+
 .empty {
   background: var(--surface);
   border: 1px solid var(--border);

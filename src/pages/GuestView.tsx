@@ -21,7 +21,7 @@ import { GiftForm } from '../components/GiftForm';
 import { GroupInfo, GroupNoteForm, GroupStartForm, groupMark } from '../components/Group';
 import { GoogleIcon, LinkIcon, PlusIcon, ShieldIcon, UsersIcon } from '../components/icons';
 import { CardMark, ItemCard } from '../components/ItemCard';
-import { ErrorBox, ExternalLink, Sheet, Spinner } from '../components/ui';
+import { ErrorBox, ExternalLink, InAppHint, Sheet, Spinner } from '../components/ui';
 import { WishesCard } from '../components/Wishes';
 import { signInWithGoogle } from '../account';
 import { errorText } from '../firebase';
@@ -115,6 +115,7 @@ function NameForm({
           <p className="t-small muted" style={{ marginTop: -6 }}>
             Рекомендуем: твои брони сохранятся в аккаунте и не потеряются, а имя подставится само.
           </p>
+          <InAppHint />
           <ErrorBox>{google.error}</ErrorBox>
           <div className="or-divider t-small" aria-hidden>
             или без входа
@@ -194,6 +195,7 @@ function SaveAccountBanner() {
         Войти через Google
       </button>
       <span className="t-small muted">Ничего не пропадёт: всё сделанное привяжется к аккаунту. Это твой список? Тоже входи здесь.</span>
+      <InAppHint />
       <ErrorBox>{google.error}</ErrorBox>
     </section>
   );

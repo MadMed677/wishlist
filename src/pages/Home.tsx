@@ -3,7 +3,7 @@ import { createWishlist, useItems, useMyWishlists, useReservations } from '../ap
 import { useAuth } from '../auth';
 import { CakeIcon, ChevronRightIcon, GoogleIcon } from '../components/icons';
 import { CardMark } from '../components/ItemCard';
-import { ErrorBox, Spinner } from '../components/ui';
+import { ErrorBox, InAppHint, Spinner } from '../components/ui';
 import { WishesField } from '../components/Wishes';
 import { signInWithGoogle } from '../account';
 import { errorText, signOut, userDisplayName } from '../firebase';
@@ -50,6 +50,7 @@ function Landing() {
           <GoogleIcon />
           {busy ? 'Вхожу…' : 'Войти через Google'}
         </button>
+        <InAppHint />
         <ErrorBox>{error}</ErrorBox>
         <p className="t-small muted">Гостям входить не нужно — достаточно открыть ссылку на список.</p>
       </section>

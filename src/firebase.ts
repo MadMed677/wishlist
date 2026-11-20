@@ -97,9 +97,17 @@ export function errorText(e: unknown): string {
   switch (code) {
     case 'auth/popup-closed-by-user':
     case 'auth/cancelled-popup-request':
-      return 'Окно входа закрыто.';
+    case 'gis/popup_closed':
+      return 'Окно Google закрылось до конца входа. Попробуй ещё раз.';
+    case 'gis/access_denied':
+      return 'Вход отменён.';
     case 'auth/popup-blocked':
+    case 'gis/popup_failed_to_open':
       return 'Браузер заблокировал окно входа. Разреши всплывающие окна и попробуй ещё раз.';
+    case 'gis/unknown':
+    case 'gis/invalid_request':
+    case 'gis/unauthorized_client':
+      return 'Google не пустил войти. Попробуй ещё раз чуть позже.';
     case 'auth/unauthorized-domain':
       return 'Этот домен не добавлен в Authorized domains в Firebase.';
     case 'auth/operation-not-allowed':

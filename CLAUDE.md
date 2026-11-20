@@ -26,6 +26,11 @@
      собирает брони/сборы/подарки анонима по спискам из `wishlist.visited`, пишет журнал в `wishlist.migration`,
      удаляет их от имени анонима, входит в Google и создаёт заново (при ошибке входа — откат; незавершённый перенос
      доделывается при следующем запуске). Итог — всплывающее сообщение (`notify` → `Notice` в `App.tsx`).
+   - Окно входа: на телефонах — Google Identity Services (`initTokenClient`, ключ → `linkWithCredential`), потому что
+     окно Firebase (`linkWithPopup`) на iPhone Safari закрывается без результата (`auth/popup-closed-by-user`);
+     на десктопе — окно Firebase. Для GIS у OAuth-клиента в Google Cloud должен быть origin `https://madmed677.github.io`.
+     Окно открывать синхронно по нажатию (никаких `await` до него), скрипт GIS грузится заранее.
+   - Ссылку открыли внутри Telegram/Instagram и т.п. (`inAppBrowser()`) — показываем `InAppHint`: «открой в Safari/Chrome».
 4. Гость жмёт «Буду дарить это» → пункт помечается «Забронировано».
    - Другие гости видят, **кто** забронировал.
    - Автор видит только «Занято», без имени.
@@ -69,6 +74,8 @@ wishlists/{listId}                     { ownerUid, ownerName, title, eventDate, 
 
 1. Создать проект в https://console.firebase.google.com (Spark), добавить Web App, вставить конфиг в `src/firebase.ts`.
 2. Включить Authentication → Google и Anonymous; добавить `madmed677.github.io` в Authorized domains.
+   В Google Cloud → Credentials → «Web client (auto created by Google Service)» добавить `https://madmed677.github.io`
+   в Authorized JavaScript origins (нужно для входа с телефона).
 3. Создать Firestore database, задеплоить `firestore.rules` (через консоль — скопировать файл, или `firebase deploy --only firestore:rules`).
 4. GitHub Pages уже включён с источником «GitHub Actions».
 
@@ -93,7 +100,7 @@ wishlists/{listId}                     { ownerUid, ownerName, title, eventDate, 
 ## Структура кода
 
 - `src/firebase.ts` — конфиг, анонимный вход, тексты ошибок, режим эмуляторов.
-- `src/account.ts` — вход через Google (привязка анонима или перенос его данных), `notify()` для всплывающих сообщений.
+- `src/account.ts` — вход через Google (GIS на телефонах, окно Firebase на десктопе; привязка анонима или перенос его данных), `notify()`, `inAppBrowser()`.
 - `src/migrate.ts` — перенос данных анонима на существующий Google-аккаунт (журнал, откат, возобновление).
 - `src/api.ts` — все запросы к Firestore и realtime-хуки (`onSnapshot`).
 - `src/pages/` — `Home` (вход / мои вишлисты), `ListPage` → `OwnerView` или `GuestView`.

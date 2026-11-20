@@ -37,6 +37,12 @@ Firebase-проект `wishlist-24cee` уже создан, его конфиг 
    - **Google** → Enable → выбери свою почту как support email → Save.
    - **Anonymous** → Enable → Save.
 3. Вкладка **Settings** → **Authorized domains** → Add domain → `madmed677.github.io`.
+4. **Вход с телефона.** На телефонах сайт входит через окно Google Identity Services (окно Firebase на iPhone
+   закрывается, не вернув результат). Для этого Google должен знать адрес сайта:
+   https://console.cloud.google.com/apis/credentials?project=wishlist-24cee → OAuth-клиент
+   **Web client (auto created by Google Service)** → **Authorized JavaScript origins** → **Add URI** →
+   `https://madmed677.github.io` → **Save**. Начинает работать через 5 минут – пару часов.
+   Client ID этого клиента прописан в `src/account.ts` (`GOOGLE_CLIENT_ID`).
 
 ### 3. База данных (Firestore)
 Прямая ссылка: https://console.firebase.google.com/project/wishlist-24cee/firestore
