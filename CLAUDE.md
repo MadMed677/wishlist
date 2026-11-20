@@ -52,12 +52,28 @@ wishlists/{listId}                     { ownerUid, ownerName, title, eventDate, 
 
 ## Настройка, которую делает человек (не код)
 
+Проект Firebase: `wishlist-24cee` (конфиг уже в `src/firebase.ts`). Пошагово для телефона — в README.
+
 1. Создать проект в https://console.firebase.google.com (Spark), добавить Web App, вставить конфиг в `src/firebase.ts`.
 2. Включить Authentication → Google и Anonymous; добавить `madmed677.github.io` в Authorized domains.
 3. Создать Firestore database, задеплоить `firestore.rules` (через консоль — скопировать файл, или `firebase deploy --only firestore:rules`).
 4. GitHub Pages уже включён с источником «GitHub Actions».
 
-## UI
+## UI и дизайн
 
-- Мобильный в первую очередь (друзья откроют ссылку с телефона), светлая/тёмная тема.
+- Мобильный в первую очередь (друзья откроют ссылку с телефона), но есть и десктопная раскладка (≥ 900px). Светлая/тёмная тема.
 - Язык интерфейса — русский.
+- Дизайн-система «Вишлист»: https://claude.ai/artifact/QfvPkkecFeLMovM4ntmjA5 ; экраны и переходы (страницы «Телефон» и «Компьютер»): https://claude.ai/artifact/LNycnQHYLxqqZgGDrYCQDW
+- Токены: `src/styles/tokens.css` (значения из `design/tokens.json`). В `src/styles/app.css` и компонентах — только `var(--токен)`, никаких литеральных цветов.
+- Один шрифт — Manrope (разные начертания 400–800). Другие шрифты не добавлять.
+- Основной цвет — синий `--primary`. «Занято другим» — оранжевые `--reserved-*`, «моя бронь» — зелёные `--mine-*`.
+- Иконки — линейные SVG из `src/components/icons.tsx`, без эмодзи.
+- Телефон: формы в шторке снизу, FAB «＋ Желание». Десктоп: боковая колонка + сетка карточек, формы — модальное окно по центру.
+
+## Структура кода
+
+- `src/firebase.ts` — конфиг, вход (Google с привязкой к анониму, анонимный), тексты ошибок, режим эмуляторов.
+- `src/api.ts` — все запросы к Firestore и realtime-хуки (`onSnapshot`).
+- `src/pages/` — `Home` (вход / мои вишлисты), `ListPage` → `OwnerView` или `GuestView`.
+- `src/components/` — карточка пункта, формы, шторка/окно, иконки.
+- Локально без настоящего Firebase: `npm run emulators` + `npm run dev:emulators`.

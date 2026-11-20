@@ -13,22 +13,22 @@ import {
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 
-// TODO: вставь сюда конфиг своего Firebase-проекта.
+// Конфиг Firebase-проекта wishlist-24cee.
 // Firebase Console → ⚙️ Project settings → General → Your apps → Web app → SDK setup and configuration → Config.
 // Эти ключи публичные, их можно хранить в репозитории: доступ к данным защищают firestore.rules.
 const firebaseConfig = {
-  apiKey: 'TODO_API_KEY',
-  authDomain: 'TODO_PROJECT_ID.firebaseapp.com',
-  projectId: 'TODO_PROJECT_ID',
-  storageBucket: 'TODO_PROJECT_ID.firebasestorage.app',
-  messagingSenderId: 'TODO_SENDER_ID',
-  appId: 'TODO_APP_ID',
+  apiKey: 'AIzaSyBdj6k6WhQWmkSLI-5yhPJkZEuzgW9kA4U',
+  authDomain: 'wishlist-24cee.firebaseapp.com',
+  projectId: 'wishlist-24cee',
+  storageBucket: 'wishlist-24cee.firebasestorage.app',
+  messagingSenderId: '802479969958',
+  appId: '1:802479969958:web:8a76c7e1a7881203798667',
 };
 
 // Локальная разработка без настоящего проекта: `npm run dev:emulators` (см. README).
 const useEmulators = import.meta.env.VITE_USE_EMULATORS === '1';
 
-/** false, пока в конфиге остаются заглушки TODO. */
+/** false, если в конфиге остались заглушки TODO. */
 export const isFirebaseConfigured =
   useEmulators || !Object.values(firebaseConfig).some((v) => v.includes('TODO'));
 
@@ -42,6 +42,12 @@ export const db = getFirestore(app);
 if (useEmulators) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  // Только для локальных тестов: вход «через Google» без окна (эмулятор принимает фейковый токен).
+  (window as unknown as Record<string, unknown>).__emulatorGoogleSignIn = (sub: string, name: string) =>
+    signInWithCredential(
+      auth,
+      GoogleAuthProvider.credential(JSON.stringify({ sub, name, email: `${sub}@example.com`, email_verified: true })),
+    );
 }
 
 /**

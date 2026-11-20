@@ -1,19 +1,24 @@
 import { useState, type FormEvent } from 'react';
+import { errorText } from '../firebase';
 import type { GiftData } from '../types';
 import { safeUrl } from '../utils';
-import { errorText } from '../firebase';
+import { EyeOffIcon } from './icons';
 import { ErrorBox } from './ui';
 
 const EMPTY: GiftData = { title: '', description: '', url: '', price: '' };
 
 export function GiftForm({
+  ownerName,
   initial,
   submitLabel,
   onSubmit,
+  onCancel,
 }: {
+  ownerName: string;
   initial?: GiftData;
   submitLabel: string;
   onSubmit: (data: GiftData) => Promise<void>;
+  onCancel: () => void;
 }) {
   const [data, setData] = useState<GiftData>(initial ?? EMPTY);
   const [busy, setBusy] = useState(false);
@@ -25,7 +30,7 @@ export function GiftForm({
     const title = data.title.trim();
     if (!title) return setError('Напиши, что даришь.');
     const url = data.url.trim() ? safeUrl(data.url) : '';
-    if (url === null) return setError('Ссылка выглядит странно.');
+    if (url === null) return setError('Ссылка выглядит странно. Начни её с https://');
     setBusy(true);
     setError('');
     try {
@@ -38,34 +43,54 @@ export function GiftForm({
 
   return (
     <form className="form" onSubmit={submit}>
-      <p className="muted small">Автор списка этого не увидит — только другие гости, чтобы не купить то же самое.</p>
-      <label>
-        <span>Что даришь *</span>
-        <input value={data.title} onChange={(e) => set('title', e.target.value)} maxLength={200} required autoFocus />
+      <div className="note t-small">
+        <EyeOffIcon />
+        <span>{ownerName || 'Автор'} этого не увидит. Видно только другим гостям — чтобы никто не купил то же самое.</span>
+      </div>
+      <label className="field">
+        <span className="t-label">Что даришь *</span>
+        <input id="gift-title" value={data.title} onChange={(e) => set('title', e.target.value)} maxLength={200} required autoFocus />
       </label>
-      <label>
-        <span>Комментарий</span>
-        <textarea value={data.description} onChange={(e) => set('description', e.target.value)} maxLength={2000} rows={2} />
-      </label>
-      <label>
-        <span>Ссылка</span>
-        <input
-          type="url"
-          inputMode="url"
-          value={data.url}
-          onChange={(e) => set('url', e.target.value)}
+      <label className="field">
+        <span className="t-label">Комментарий</span>
+        <textarea
+          id="gift-description"
+          value={data.description}
+          onChange={(e) => set('description', e.target.value)}
           maxLength={2000}
-          placeholder="https://…"
+          rows={2}
         />
       </label>
-      <label>
-        <span>Примерная цена</span>
-        <input value={data.price} onChange={(e) => set('price', e.target.value)} maxLength={50} />
-      </label>
+      <div className="form-grid-2">
+        <label className="field">
+          <span className="t-label">Ссылка</span>
+          <input
+            id="gift-url"
+            type="text"
+            inputMode="url"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            value={data.url}
+            onChange={(e) => set('url', e.target.value)}
+            maxLength={2000}
+            placeholder="https://…"
+          />
+        </label>
+        <label className="field">
+          <span className="t-label">Примерная цена</span>
+          <input id="gift-price" value={data.price} onChange={(e) => set('price', e.target.value)} maxLength={50} />
+        </label>
+      </div>
       <ErrorBox>{error}</ErrorBox>
-      <button className="btn btn-primary" type="submit" disabled={busy}>
-        {busy ? 'Сохраняю…' : submitLabel}
-      </button>
+      <div className="form-actions">
+        <button type="button" className="btn desktop-only" onClick={onCancel}>
+          Отмена
+        </button>
+        <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
+          {busy ? 'Сохраняю…' : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

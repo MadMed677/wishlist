@@ -1,13 +1,13 @@
 import type { Priority } from './types';
 
-export const PRIORITIES: { value: Priority; label: string; emoji: string }[] = [
-  { value: 1, label: 'Очень хочу', emoji: '🔥' },
-  { value: 2, label: 'Хочу', emoji: '✨' },
-  { value: 3, label: 'Было бы неплохо', emoji: '🙂' },
+export const PRIORITIES: { value: Priority; label: string }[] = [
+  { value: 1, label: 'Очень хочу' },
+  { value: 2, label: 'Хочу' },
+  { value: 3, label: 'Было бы неплохо' },
 ];
 
-export function priorityInfo(p: Priority) {
-  return PRIORITIES.find((x) => x.value === p) ?? PRIORITIES[1];
+export function priorityLabel(p: Priority): string {
+  return (PRIORITIES.find((x) => x.value === p) ?? PRIORITIES[1]).label;
 }
 
 /** Возвращает ссылку, только если это http(s), иначе null (защита от javascript: и т.п.). */
@@ -34,10 +34,10 @@ export function formatDate(iso: string): string {
   if (!iso) return '';
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).replace(/\s*г\.$/, '');
 }
 
-function plural(n: number, one: string, few: string, many: string) {
+export function plural(n: number, one: string, few: string, many: string) {
   const m10 = n % 10;
   const m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return one;
@@ -52,14 +52,19 @@ export function countdown(iso: string): string {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = Math.round((target.getTime() - today.getTime()) / 86_400_000);
-  if (days === 0) return 'сегодня! 🎉';
+  if (days === 0) return 'сегодня!';
   if (days === 1) return 'завтра';
   if (days < 0) return 'уже прошло';
   return `через ${days} ${plural(days, 'день', 'дня', 'дней')}`;
 }
 
-export function giftsWord(n: number) {
-  return plural(n, 'подарок', 'подарка', 'подарков');
+export function wishesCount(n: number) {
+  return `${n} ${plural(n, 'желание', 'желания', 'желаний')}`;
+}
+
+/** «Артём» → «от Артёма» не склоняем надёжно, поэтому просто первое слово имени. */
+export function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
 }
 
 // ---------- имя гостя ----------
@@ -100,10 +105,17 @@ export function applyTheme(t: Theme) {
   if (t === 'auto') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme', t);
   try {
-    localStorage.setItem(THEME_KEY, t);
+    if (t === 'auto') localStorage.removeItem(THEME_KEY);
+    else localStorage.setItem(THEME_KEY, t);
   } catch {
     /* ignore */
   }
+}
+
+/** Какая тема видна сейчас (с учётом системной). */
+export function resolvedTheme(t: Theme): 'light' | 'dark' {
+  if (t !== 'auto') return t;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 export function shareUrl(listId: string): string {

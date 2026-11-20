@@ -1,40 +1,63 @@
 import { useState } from 'react';
-import { isFirebaseConfigured } from './firebase';
-import { useRoute } from './router';
+import { useAuth } from './auth';
+import { MoonIcon, GiftIcon, SunIcon } from './components/icons';
+import { isFirebaseConfigured, signOut, userDisplayName } from './firebase';
 import { Home } from './pages/Home';
 import { ListPage } from './pages/ListPage';
-import { applyTheme, loadTheme, type Theme } from './utils';
-
-const THEME_ICON: Record<Theme, string> = { auto: '🌓', light: '☀️', dark: '🌙' };
-const THEME_NEXT: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' };
-const THEME_LABEL: Record<Theme, string> = { auto: 'Тема: как в системе', light: 'Тема: светлая', dark: 'Тема: тёмная' };
+import { useRoute } from './router';
+import { applyTheme, firstName, loadTheme, resolvedTheme, type Theme } from './utils';
 
 export function App() {
   const route = useRoute();
+  const { user } = useAuth();
   const [theme, setTheme] = useState<Theme>(loadTheme);
+  const shown = resolvedTheme(theme);
 
   const toggleTheme = () => {
-    const next = THEME_NEXT[theme];
+    const next: Theme = shown === 'dark' ? 'light' : 'dark';
     applyTheme(next);
     setTheme(next);
   };
 
+  const author = user && !user.isAnonymous ? userDisplayName(user) : null;
+  const themeLabel = shown === 'dark' ? 'Светлая тема' : 'Тёмная тема';
+
   return (
-    <div className="app">
+    <>
       <header className="topbar">
-        <a className="brand" href="#/">
-          🎁 Вишлист
-        </a>
-        <button className="icon-btn" onClick={toggleTheme} title={THEME_LABEL[theme]} aria-label={THEME_LABEL[theme]}>
-          {THEME_ICON[theme]}
-        </button>
+        <div className="topbar-inner">
+          <a className="brand" href="#/">
+            <GiftIcon size={22} />
+            Вишлист
+          </a>
+          <div className="topbar-actions">
+            <button className="icon-btn" onClick={toggleTheme} title={themeLabel} aria-label={themeLabel}>
+              {shown === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+            {author && (
+              <>
+                <span className="user-chip desktop-only">
+                  <span className="avatar t-label" aria-hidden>
+                    {author.slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="t-label">{firstName(author)}</span>
+                </span>
+                <button className="btn btn-sm desktop-only" onClick={() => signOut()}>
+                  Выйти
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </header>
 
-      <main className="content">
+      <main className="page">
         {!isFirebaseConfigured ? (
-          <div className="card notice">
-            <h2>Firebase ещё не настроен</h2>
-            <p>
+          <div className="empty">
+            <h2 className="t-title" style={{ color: 'var(--text)' }}>
+              Firebase ещё не настроен
+            </h2>
+            <p className="t-small">
               Вставь конфиг Firebase-проекта в <code>src/firebase.ts</code> — пошаговая инструкция в README репозитория.
             </p>
           </div>
@@ -43,14 +66,14 @@ export function App() {
         ) : route.name === 'list' ? (
           <ListPage key={route.id} listId={route.id} />
         ) : (
-          <div className="card empty">
-            <p>Такой страницы нет.</p>
+          <div className="empty">
+            <p className="t-small">Такой страницы нет.</p>
             <a className="btn" href="#/">
               На главную
             </a>
           </div>
         )}
       </main>
-    </div>
+    </>
   );
 }

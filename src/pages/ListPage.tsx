@@ -4,7 +4,7 @@ import { useAuth } from '../auth';
 import { ErrorBox, Spinner } from '../components/ui';
 import { errorText, signInGuest } from '../firebase';
 import type { Wishlist } from '../types';
-import { countdown, formatDate } from '../utils';
+import { countdown, firstName, formatDate } from '../utils';
 import { GuestView } from './GuestView';
 import { OwnerView } from './OwnerView';
 
@@ -25,36 +25,34 @@ export function ListPage({ listId }: { listId: string }) {
   if (list.error) return <ErrorBox>{errorText(list.error)}</ErrorBox>;
   if (list.notFound || !list.data)
     return (
-      <div className="card empty">
-        <p>Такого вишлиста нет. Возможно, ссылка неполная.</p>
+      <div className="empty">
+        <p className="t-small">Такого вишлиста нет. Возможно, ссылка неполная.</p>
         <a className="btn" href="#/">
           На главную
         </a>
       </div>
     );
 
-  const isOwner = user.uid === list.data.ownerUid;
-  return (
-    <>
-      <ListHeader list={list.data} />
-      {isOwner ? <OwnerView list={list.data} /> : <GuestView list={list.data} user={user} />}
-    </>
-  );
+  return user.uid === list.data.ownerUid ? <OwnerView list={list.data} /> : <GuestView list={list.data} user={user} />;
 }
 
-function ListHeader({ list }: { list: Wishlist }) {
+/** Название, автор и дата — шапка боковой колонки. */
+export function ListTitle({ list, showOwner }: { list: Wishlist; showOwner: boolean }) {
+  const owner = showOwner && list.ownerName ? `от ${firstName(list.ownerName)}` : '';
   return (
-    <section className="list-header">
-      <h1>{list.title}</h1>
-      <p className="muted">
-        {list.ownerName && <>от {list.ownerName}</>}
-        {list.ownerName && list.eventDate && ' · '}
-        {list.eventDate && (
-          <>
-            {formatDate(list.eventDate)} — <strong>{countdown(list.eventDate)}</strong>
-          </>
-        )}
-      </p>
+    <section className="list-title">
+      <h1 className="t-hero">{list.title}</h1>
+      {(owner || list.eventDate) && (
+        <p className="t-small muted">
+          {owner}
+          {owner && list.eventDate && ' · '}
+          {list.eventDate && (
+            <>
+              {formatDate(list.eventDate)} — <strong style={{ color: 'var(--text)' }}>{countdown(list.eventDate)}</strong>
+            </>
+          )}
+        </p>
+      )}
     </section>
   );
 }

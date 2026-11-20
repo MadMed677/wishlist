@@ -1,0 +1,109 @@
+/*
+ * Токены дизайн-системы «Вишлист». Источник значений — design/tokens.json
+ * (копия дизайн-системы из claude.ai). Меняешь цвет — меняй в обоих местах.
+ *
+ * Тема: без атрибута — как в системе (prefers-color-scheme);
+ * data-theme="light" / "dark" на <html> — явный выбор пользователя.
+ */
+
+:root {
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #eaeef5;
+  --border: #d9e0eb;
+  --border-strong: #aab6c8;
+  --text: #132034;
+  --text-muted: #526075;
+  --primary: #2459d6;
+  --on-primary: #ffffff;
+  --primary-soft: #e1eafc;
+  --primary-ink: #1b45ad;
+  --reserved-soft: #fcefdf;
+  --reserved-ink: #8f4706;
+  --mine-soft: #ddf2e6;
+  --mine-ink: #1a6640;
+  --danger: #b8301e;
+  --danger-soft: #fcebe8;
+  --scrim: rgba(14, 19, 27, 0.48);
+  --shadow-card: 0 1px 2px rgba(19, 32, 52, 0.05), 0 4px 16px rgba(19, 32, 52, 0.06);
+  --shadow-fab: 0 6px 20px rgba(36, 89, 214, 0.35);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-sheet: 22px;
+  --radius-pill: 999px;
+
+  --font-sans: Manrope, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: light;
+}
+
+/* Тёмные значения: одинаковые в обоих блоках ниже */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0e131b;
+    --surface: #171e29;
+    --surface-2: #212a37;
+    --border: #2b3546;
+    --border-strong: #4a5870;
+    --text: #e7edf6;
+    --text-muted: #9aa7ba;
+    --primary: #6b9bff;
+    --on-primary: #0a1426;
+    --primary-soft: #1b2b48;
+    --primary-ink: #aac6ff;
+    --reserved-soft: #36281a;
+    --reserved-ink: #f2b46e;
+    --mine-soft: #163024;
+    --mine-ink: #86d6a8;
+    --danger: #ff8b7b;
+    --danger-soft: #3a1e1b;
+    --scrim: rgba(0, 0, 0, 0.62);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+    --shadow-fab: 0 6px 20px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0e131b;
+  --surface: #171e29;
+  --surface-2: #212a37;
+  --border: #2b3546;
+  --border-strong: #4a5870;
+  --text: #e7edf6;
+  --text-muted: #9aa7ba;
+  --primary: #6b9bff;
+  --on-primary: #0a1426;
+  --primary-soft: #1b2b48;
+  --primary-ink: #aac6ff;
+  --reserved-soft: #36281a;
+  --reserved-ink: #f2b46e;
+  --mine-soft: #163024;
+  --mine-ink: #86d6a8;
+  --danger: #ff8b7b;
+  --danger-soft: #3a1e1b;
+  --scrim: rgba(0, 0, 0, 0.62);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-fab: 0 6px 20px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+/* Стили текста — один шрифт, разные начертания */
+.t-hero { font-family: var(--font-sans); font-size: 44px; line-height: 50px; font-weight: 800; }
+.t-display { font-family: var(--font-sans); font-size: 27px; line-height: 32px; font-weight: 800; }
+.t-title { font-family: var(--font-sans); font-size: 20px; line-height: 26px; font-weight: 800; }
+.t-item { font-family: var(--font-sans); font-size: 17px; line-height: 23px; font-weight: 700; }
+.t-body { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 400; }
+.t-button { font-family: var(--font-sans); font-size: 16px; line-height: 20px; font-weight: 700; }
+.t-small { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 500; }
+.t-label { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
+.t-caption { font-family: var(--font-sans); font-size: 13px; line-height: 16px; font-weight: 700; }

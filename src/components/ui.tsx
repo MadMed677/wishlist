@@ -1,8 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
+import { AlertIcon, CloseIcon } from './icons';
 
 export function Spinner({ label = 'Загрузка…' }: { label?: string }) {
   return (
-    <div className="spinner-wrap" role="status">
+    <div className="spinner-wrap t-small" role="status">
       <span className="spinner" aria-hidden />
       <span>{label}</span>
     </div>
@@ -12,13 +13,14 @@ export function Spinner({ label = 'Загрузка…' }: { label?: string }) {
 export function ErrorBox({ children }: { children: ReactNode }) {
   if (!children) return null;
   return (
-    <div className="error" role="alert">
-      {children}
+    <div className="error t-small" role="alert">
+      <AlertIcon />
+      <span>{children}</span>
     </div>
   );
 }
 
-/** Нижняя «шторка» для форм — удобно на телефоне. */
+/** Шторка снизу на телефоне, модальное окно по центру на десктопе. */
 export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -33,22 +35,23 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <section className="sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-handle" aria-hidden />
         <div className="sheet-head">
-          <h2>{title}</h2>
+          <h2 className="t-title">{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Закрыть">
-            ✕
+            <CloseIcon />
           </button>
         </div>
         {children}
-      </div>
+      </section>
     </div>
   );
 }
 
-export function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
+export function ExternalLink({ href, className, children }: { href: string; className?: string; children: ReactNode }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer nofollow">
+    <a href={href} className={className} target="_blank" rel="noopener noreferrer nofollow">
       {children}
     </a>
   );

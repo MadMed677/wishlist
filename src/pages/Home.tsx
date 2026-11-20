@@ -1,48 +1,81 @@
 import { useState, type FormEvent } from 'react';
-import { createWishlist, useMyWishlists } from '../api';
+import { createWishlist, useItems, useMyWishlists, useReservations } from '../api';
 import { useAuth } from '../auth';
+import { CakeIcon, ChevronRightIcon, GoogleIcon } from '../components/icons';
 import { ErrorBox, Spinner } from '../components/ui';
 import { errorText, signInWithGoogle, signOut, userDisplayName } from '../firebase';
 import { navigate } from '../router';
-import { countdown, formatDate } from '../utils';
+import type { Wishlist } from '../types';
+import { countdown, firstName, formatDate, wishesCount } from '../utils';
 
 export function Home() {
   const { user } = useAuth();
+  if (user === undefined) return <Spinner />;
+  if (!user || user.isAnonymous) return <Landing />;
+  return <MyLists uid={user.uid} name={userDisplayName(user)} />;
+}
+
+function Landing() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  if (user === undefined) return <Spinner />;
+  const login = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
-  if (!user || user.isAnonymous) {
-    const login = async () => {
-      setBusy(true);
-      setError('');
-      try {
-        await signInWithGoogle();
-      } catch (e) {
-        setError(errorText(e));
-      } finally {
-        setBusy(false);
-      }
-    };
-    return (
-      <section className="card hero">
-        <div className="hero-emoji">🎂</div>
-        <h1>Вишлист ко дню рождения</h1>
-        <p>
-          Составь список желаний и отправь ссылку друзьям. Они договорятся, кто что дарит, а ты не узнаешь, кто именно —
-          сюрприз сохранится.
+  return (
+    <div className="landing">
+      <section className="landing-main">
+        <div className="landing-icon mobile-only">
+          <CakeIcon size={36} strokeWidth={1.8} />
+        </div>
+        <h1 className="t-display mobile-only">Вишлист ко дню рождения</h1>
+        <h1 className="t-hero desktop-only">Вишлист ко дню рождения</h1>
+        <p className="t-body muted" style={{ maxWidth: 520 }}>
+          Составь список желаний и отправь ссылку друзьям. Они договорятся, кто что дарит, а ты не узнаешь кто — сюрприз
+          сохранится.
         </p>
-        <button className="btn btn-primary btn-wide" onClick={login} disabled={busy}>
+        <button className="btn btn-primary btn-lg btn-block" onClick={login} disabled={busy}>
+          <GoogleIcon />
           {busy ? 'Вхожу…' : 'Войти через Google'}
         </button>
         <ErrorBox>{error}</ErrorBox>
-        <p className="muted small">Гостям входить не нужно — достаточно открыть ссылку на список.</p>
+        <p className="t-small muted">Гостям входить не нужно — достаточно открыть ссылку на список.</p>
       </section>
-    );
-  }
 
-  return <MyLists uid={user.uid} name={userDisplayName(user)} />;
+      <section className="landing-preview desktop-only" aria-label="Пример списка глазами гостя">
+        <div className="card card-raised" style={{ padding: 'var(--space-5)' }}>
+          <div className="row-between" style={{ alignItems: 'baseline', paddingBottom: 'var(--space-4)' }}>
+            <span className="t-title">День рождения — 30!</span>
+            <span className="t-small muted">через 24 дня</span>
+          </div>
+          <div className="preview-row">
+            <span className="t-item">Наушники с шумодавом</span>
+            <span className="status status-reserved t-small">Дарит Боря</span>
+          </div>
+          <div className="preview-row">
+            <span className="t-item">Ручная кофемолка</span>
+            <span className="status status-mine t-small">Это даришь ты</span>
+          </div>
+          <div className="preview-row">
+            <span className="t-item">Настольная игра «Каркассон»</span>
+            <span className="btn btn-primary btn-sm" aria-hidden>
+              Буду дарить это
+            </span>
+          </div>
+        </div>
+        <p className="t-small muted">Так список видят гости. Автор видит только «Занято», без имён.</p>
+      </section>
+    </div>
+  );
 }
 
 function MyLists({ uid, name }: { uid: string; name: string }) {
@@ -67,64 +100,91 @@ function MyLists({ uid, name }: { uid: string; name: string }) {
     }
   };
 
+  const hello = `Привет, ${firstName(name)}!`;
+
   return (
     <>
-      <section className="row-between">
-        <h1>Привет, {name.split(' ')[0]}!</h1>
-        <button className="btn btn-ghost btn-small" onClick={() => signOut()}>
+      <div className="row-between">
+        <h1 className="t-display mobile-only">{hello}</h1>
+        <h1 className="t-hero desktop-only">{hello}</h1>
+        <button className="btn btn-sm mobile-only" onClick={() => signOut()}>
           Выйти
         </button>
-      </section>
+      </div>
 
-      <section className="card">
-        <h2>Новый вишлист</h2>
-        <form className="form" onSubmit={create}>
-          <label>
-            <span>Название</span>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Мой день рождения 🎉"
-              maxLength={200}
-              required
-            />
-          </label>
-          <label>
-            <span>Дата события</span>
-            <input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
-          </label>
-          <ErrorBox>{error}</ErrorBox>
-          <button className="btn btn-primary" type="submit" disabled={busy}>
-            {busy ? 'Создаю…' : 'Создать'}
-          </button>
-        </form>
-      </section>
+      <div className="lists-layout">
+        <section className="create card card-raised">
+          <h2 className="t-title">Новый вишлист</h2>
+          <form className="form" onSubmit={create}>
+            <label className="field">
+              <span className="t-label">Название</span>
+              <input
+                id="list-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Мой день рождения"
+                maxLength={200}
+                required
+              />
+            </label>
+            <label className="field">
+              <span className="t-label">Дата события</span>
+              <input id="list-date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+            </label>
+            <ErrorBox>{error}</ErrorBox>
+            <button className="btn btn-primary" type="submit" disabled={busy}>
+              {busy ? 'Создаю…' : 'Создать'}
+            </button>
+          </form>
+        </section>
 
-      <section>
-        <h2>Мои вишлисты</h2>
-        {lists.loading ? (
-          <Spinner />
-        ) : lists.error ? (
-          <ErrorBox>{errorText(lists.error)}</ErrorBox>
-        ) : lists.data.length === 0 ? (
-          <p className="muted">Пока ни одного — создай первый выше.</p>
-        ) : (
-          <ul className="list-links">
-            {lists.data.map((l) => (
-              <li key={l.id}>
-                <a className="card list-link" href={`#/list/${l.id}`}>
-                  <strong>{l.title}</strong>
-                  {l.eventDate && (
-                    <span className="muted small">
-                      {formatDate(l.eventDate)} · {countdown(l.eventDate)}
-                    </span>
-                  )}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <section className="lists">
+          <h2 className="t-title">Мои вишлисты</h2>
+          {lists.loading ? (
+            <Spinner />
+          ) : lists.error ? (
+            <ErrorBox>{errorText(lists.error)}</ErrorBox>
+          ) : lists.data.length === 0 ? (
+            <p className="t-small muted">Пока ни одного — создай первый.</p>
+          ) : (
+            <div className="list-cards">
+              {lists.data.map((l) => (
+                <ListCard key={l.id} list={l} />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </>
+  );
+}
+
+function ListCard({ list }: { list: Wishlist }) {
+  return (
+    <a className="card list-card" href={`#/list/${list.id}`}>
+      <span className="stack" style={{ gap: 2 }}>
+        <strong className="t-item">{list.title}</strong>
+        {list.eventDate && (
+          <span className="t-small muted">
+            {formatDate(list.eventDate)} · {countdown(list.eventDate)}
+          </span>
+        )}
+        <ListStats listId={list.id} />
+      </span>
+      <ChevronRightIcon />
+    </a>
+  );
+}
+
+function ListStats({ listId }: { listId: string }) {
+  const items = useItems(listId);
+  const reservations = useReservations(listId);
+  if (items.loading) return null;
+  const ids = new Set(items.data.map((i) => i.id));
+  const taken = reservations.data.filter((r) => ids.has(r.id)).length;
+  return (
+    <span className="t-small muted desktop-only" style={{ paddingTop: 'var(--space-3)' }}>
+      {wishesCount(items.data.length)} · занято {taken}
+    </span>
   );
 }
