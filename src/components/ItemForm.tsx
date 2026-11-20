@@ -126,7 +126,7 @@ export function ItemForm({
             value={data.price}
             onChange={(e) => set('price', e.target.value)}
             maxLength={50}
-            placeholder="≈ 3 000 ₽"
+            placeholder="≈ 15 000 ₸"
           />
         </label>
       </div>
