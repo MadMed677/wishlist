@@ -54,7 +54,7 @@ wishlists/{listId}                     { ownerUid, ownerName, title, eventDate, 
 - `reservations`: читают все; `create` — если `request.resource.data.uid == request.auth.uid` и пользователь не владелец; `delete` — сам бронировавший или владелец.
 - `reservationDetails`, `guestGifts`: read — только если `request.auth.uid != ownerUid` списка; write — только свои документы (uid == auth.uid), не владелец.
 - Известное ограничение: автор в инкогнито = гость. Это принимаем.
-- **Правила публикуются отдельным workflow** `.github/workflows/firestore-rules.yml`: при изменении `firestore.rules` в `main` он гоняет тесты `tests/rules/*.test.mjs` на эмуляторе (`npm run test:rules`, нужна Java) и деплоит правила, если задан секрет `FIREBASE_SERVICE_ACCOUNT`. Меняешь правила — добавь/обнови тесты и проверь, что workflow зелёный и не написал предупреждение «секрет не задан»; если секрета нет — попроси владельца опубликовать правила вручную (README → «Правила доступа»).
+- **Правила публикуются отдельным workflow** `.github/workflows/firestore-rules.yml`: при изменении `firestore.rules` в `main` он гоняет тесты `tests/rules/*.test.mjs` на эмуляторе (`npm run test:rules`, нужна Java) и деплоит правила скриптом `scripts/deploy-rules.mjs` (Firebase Admin SDK; firebase-tools не подходит — у ключа adminsdk нет прав на serviceusage), если задан секрет `FIREBASE_SERVICE_ACCOUNT`. Меняешь правила — добавь/обнови тесты и проверь, что workflow зелёный и не написал предупреждение «секрет не задан»; если секрета нет — попроси владельца опубликовать правила вручную (README → «Правила доступа»).
 
 ## Настройка, которую делает человек (не код)
 
