@@ -1,0 +1,60 @@
+import { readFileSync } from 'node:fs';
+import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
+import { doc, setDoc, getDoc, getDocs, collection, writeBatch, deleteDoc, updateDoc, serverTimestamp, addDoc } from 'firebase/firestore';
+
+const env = await initializeTestEnvironment({
+  projectId: 'demo-wishlist',
+  firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8'), host: '127.0.0.1', port: 8080 },
+});
+const google = (uid) => env.authenticatedContext(uid, { firebase: { sign_in_provider: 'google.com' } }).firestore();
+const anon = (uid) => env.authenticatedContext(uid, { firebase: { sign_in_provider: 'anonymous' } }).firestore();
+const owner = google('owner'), a = anon('guestA'), b = anon('guestB'), nobody = env.unauthenticatedContext().firestore();
+let ok = 0;
+const t = async (name, p) => { try { await p; ok++; console.log('✓', name); } catch (e) { console.error('✗', name, '-', e.message); process.exitCode = 1; } };
+const L = 'wishlists/L1';
+const reserve = (db, uid, item, name) => { const bt = writeBatch(db); bt.set(doc(db, `${L}/reservations/${item}`), { uid, createdAt: serverTimestamp() }); bt.set(doc(db, `${L}/reservationDetails/${item}`), { uid, guestName: name }); return bt.commit(); };
+const cancel = (db, item) => { const bt = writeBatch(db); bt.delete(doc(db, `${L}/reservations/${item}`)); bt.delete(doc(db, `${L}/reservationDetails/${item}`)); return bt.commit(); };
+const item = { title: 'Книга', description: '', url: '', imageUrl: '', price: '', priority: 1, createdAt: serverTimestamp() };
+
+await t('anon cannot create wishlist', assertFails(setDoc(doc(a, 'wishlists/X'), { ownerUid: 'guestA', ownerName: 'A', title: 't', eventDate: '' })));
+await t('owner creates wishlist', assertSucceeds(setDoc(doc(owner, L), { ownerUid: 'owner', ownerName: 'O', title: 'ДР', eventDate: '2026-12-01', createdAt: serverTimestamp() })));
+await t('cannot create wishlist for someone else', assertFails(setDoc(doc(owner, 'wishlists/Y'), { ownerUid: 'other', title: 't' })));
+await t('unauth cannot read', assertFails(getDoc(doc(nobody, L))));
+await t('guest reads wishlist', assertSucceeds(getDoc(doc(a, L))));
+await t('guest cannot edit wishlist', assertFails(updateDoc(doc(a, L), { title: 'x' })));
+await t('owner adds item', assertSucceeds(setDoc(doc(owner, `${L}/items/i1`), item)));
+await t('owner adds item 2', assertSucceeds(setDoc(doc(owner, `${L}/items/i2`), item)));
+await t('bad priority rejected', assertFails(setDoc(doc(owner, `${L}/items/i9`), { ...item, priority: 7 })));
+await t('guest cannot add item', assertFails(setDoc(doc(a, `${L}/items/i3`), item)));
+await t('guest reads items', assertSucceeds(getDocs(collection(a, `${L}/items`))));
+await t('owner cannot reserve own item', assertFails(reserve(owner, 'owner', 'i1', 'O')));
+await t('reservation without details rejected', assertFails(setDoc(doc(a, `${L}/reservations/i1`), { uid: 'guestA', createdAt: serverTimestamp() })));
+await t('reservation for other uid rejected', assertFails(reserve(a, 'guestB', 'i1', 'A')));
+await t('reservation of missing item rejected', assertFails(reserve(a, 'guestA', 'nope', 'A')));
+await t('guest A reserves i1', assertSucceeds(reserve(a, 'guestA', 'i1', 'Аня')));
+await t('guest B double-reserve fails', assertFails(reserve(b, 'guestB', 'i1', 'Боря')));
+await t('guest A re-reserve (update) fails', assertFails(reserve(a, 'guestA', 'i1', 'Аня2')));
+await t('owner reads reservations', assertSucceeds(getDocs(collection(owner, `${L}/reservations`))));
+await t('owner CANNOT read reservationDetails (query)', assertFails(getDocs(collection(owner, `${L}/reservationDetails`))));
+await t('owner CANNOT read reservationDetails (doc)', assertFails(getDoc(doc(owner, `${L}/reservationDetails/i1`))));
+await t('guest B reads reservationDetails', assertSucceeds(getDocs(collection(b, `${L}/reservationDetails`))));
+await t('guest B cannot cancel A', assertFails(cancel(b, 'i1')));
+await t('guest A cancels', assertSucceeds(cancel(a, 'i1')));
+await t('guest B reserves i1 now', assertSucceeds(reserve(b, 'guestB', 'i1', 'Боря')));
+await t('owner deletes reserved item in batch', assertSucceeds((() => { const bt = writeBatch(owner); bt.delete(doc(owner, `${L}/items/i1`)); bt.delete(doc(owner, `${L}/reservations/i1`)); bt.delete(doc(owner, `${L}/reservationDetails/i1`)); return bt.commit(); })()));
+await t('owner deletes unreserved item', assertSucceeds(deleteDoc(doc(owner, `${L}/items/i2`))));
+const gift = { title: 'Цветы', description: '', url: '', price: '', createdAt: serverTimestamp() };
+await t('owner cannot add guestGift', assertFails(setDoc(doc(owner, `${L}/guestGifts/g0`), { ...gift, uid: 'owner', guestName: 'O' })));
+await t('guest B adds gift', assertSucceeds(setDoc(doc(b, `${L}/guestGifts/g1`), { ...gift, uid: 'guestB', guestName: 'Боря' })));
+await t('gift with foreign uid rejected', assertFails(setDoc(doc(a, `${L}/guestGifts/g2`), { ...gift, uid: 'guestB', guestName: 'A' })));
+await t('owner CANNOT read guestGifts', assertFails(getDocs(collection(owner, `${L}/guestGifts`))));
+await t('guest A reads guestGifts', assertSucceeds(getDocs(collection(a, `${L}/guestGifts`))));
+await t('guest A cannot edit B gift', assertFails(updateDoc(doc(a, `${L}/guestGifts/g1`), { title: 'x' })));
+await t('guest A cannot delete B gift', assertFails(deleteDoc(doc(a, `${L}/guestGifts/g1`))));
+await t('guest B edits own gift', assertSucceeds(updateDoc(doc(b, `${L}/guestGifts/g1`), { title: 'Розы' })));
+await t('guest B cannot steal uid', assertFails(updateDoc(doc(b, `${L}/guestGifts/g1`), { uid: 'guestA' })));
+await t('guest B deletes own gift', assertSucceeds(deleteDoc(doc(b, `${L}/guestGifts/g1`))));
+await t('add via addDoc works', assertSucceeds(addDoc(collection(a, `${L}/guestGifts`), { ...gift, uid: 'guestA', guestName: 'Аня' })));
+console.log(process.exitCode ? `\nFAILED (passed ${ok})` : `\nALL ${ok} PASSED`);
+await env.cleanup();
+process.exit(process.exitCode ?? 0);

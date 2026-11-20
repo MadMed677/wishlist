@@ -42,12 +42,29 @@ Firebase-проект `wishlist-24cee` уже создан, его конфиг 
 
 1. Create database → регион поближе к друзьям (например `europe-west`; поменять потом нельзя) → **Production mode** → Create.
 
-### 4. Правила доступа
-1. Открой файл [`firestore.rules`](firestore.rules) в репозитории → кнопка «Raw» → выдели всё и скопируй.
-2. Firestore Database → вкладка **Rules** → удали всё, что там есть, вставь скопированное → **Publish**.
+### 4. Правила доступа — автопубликация (один раз настроить)
 
-После изменения `firestore.rules` в репозитории этот шаг нужно повторить.
-С компьютера можно и так: `npx firebase-tools deploy --only firestore:rules --project wishlist-24cee`.
+Правила из `firestore.rules` публикуются сами через GitHub Actions (`.github/workflows/firestore-rules.yml`)
+при каждом их изменении в `main`: сначала проверяются тестами на эмуляторе, потом выкладываются в Firebase.
+Для этого GitHub нужен ключ доступа к проекту. Проще сделать с компьютера:
+
+1. Открой https://console.firebase.google.com/project/wishlist-24cee/settings/serviceaccounts/adminsdk
+   → **Generate new private key** → **Generate key**. Скачается файл `.json`.
+2. Открой https://github.com/MadMed677/wishlist/settings/secrets/actions → **New repository secret**:
+   - Name: `FIREBASE_SERVICE_ACCOUNT`
+   - Secret: открой скачанный файл как текст, скопируй **всё** содержимое и вставь
+   - **Add secret**
+3. Удали скачанный файл с компьютера — он больше не нужен (ключ хранится только в секретах GitHub).
+4. Запусти публикацию один раз вручную: https://github.com/MadMed677/wishlist/actions/workflows/firestore-rules.yml
+   → **Run workflow** → **Run workflow**. Через минуту там должна появиться зелёная галочка.
+
+Дальше ничего делать не нужно. Если ключ когда-нибудь утечёт — удали его в Google Cloud
+(IAM → Service accounts → firebase-adminsdk → Keys) и создай новый.
+
+**Вручную (если ключ не настроен):** открой [`firestore.rules`](firestore.rules) → «Raw» → скопируй всё →
+Firestore Database → вкладка **Rules** → вставь → **Publish**.
+
+Проверить правила локально (нужна Java): `npm run test:rules`.
 
 ## Деплой
 
