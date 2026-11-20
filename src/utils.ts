@@ -96,6 +96,30 @@ export function shareText(price: string, people: number): string | null {
   return `${value.toLocaleString('ru-RU')} ${p.symbol}`;
 }
 
+// ---------- списки, открытые в этом браузере ----------
+// Нужны, чтобы при входе через Google перенести брони анонимного гостя со всех его списков.
+
+const VISITED_KEY = 'wishlist.visited';
+
+export function loadVisitedLists(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(VISITED_KEY) ?? '[]');
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function rememberVisitedList(listId: string) {
+  try {
+    const list = loadVisitedLists().filter((id) => id !== listId);
+    list.unshift(listId);
+    localStorage.setItem(VISITED_KEY, JSON.stringify(list.slice(0, 50)));
+  } catch {
+    /* приватный режим — ничего страшного */
+  }
+}
+
 // ---------- имя гостя ----------
 
 const NAME_KEY = 'wishlist.guestName';

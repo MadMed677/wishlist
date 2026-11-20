@@ -1,4 +1,4 @@
-import { useCallback, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import {
   addGuestGift,
@@ -19,25 +19,38 @@ import {
 } from '../api';
 import { GiftForm } from '../components/GiftForm';
 import { GroupInfo, GroupNoteForm, GroupStartForm, groupMark } from '../components/Group';
-import { LinkIcon, PlusIcon, UsersIcon } from '../components/icons';
+import { GoogleIcon, LinkIcon, PlusIcon, ShieldIcon, UsersIcon } from '../components/icons';
 import { CardMark, ItemCard } from '../components/ItemCard';
 import { ErrorBox, ExternalLink, Sheet, Spinner } from '../components/ui';
 import { WishesCard } from '../components/Wishes';
-import { errorText, signInWithGoogle } from '../firebase';
+import { signInWithGoogle } from '../account';
+import { errorText } from '../firebase';
 import type { GuestGift, Item, Wishlist } from '../types';
-import { firstName, hostOf, loadGuestName, plural, safeUrl, saveGuestName } from '../utils';
+import { firstName, hostOf, loadGuestName, plural, rememberVisitedList, safeUrl, saveGuestName } from '../utils';
 import { ListTitle } from './ListPage';
 
 export function GuestView({ list, user }: { list: Wishlist; user: User }) {
   const [name, setName] = useState(() => loadGuestName());
   const [askName, setAskName] = useState(() => !loadGuestName());
-  const suggested = name || (!user.isAnonymous ? firstName(user.displayName ?? '') : '');
+  // у привязанного анонима имя Google может лежать только в providerData
+  const googleName = !user.isAnonymous
+    ? firstName(user.displayName || user.providerData.find((p) => p.displayName)?.displayName || '')
+    : '';
+  const suggested = name || googleName;
 
   const saveName = (n: string) => {
     saveGuestName(n);
     setName(n);
     setAskName(false);
   };
+
+  // Запоминаем список — чтобы при входе через Google перенести брони со всех списков.
+  useEffect(() => rememberVisitedList(list.id), [list.id]);
+
+  // Вошёл через Google на шаге с именем — имя берём из аккаунта, второй раз не спрашиваем.
+  useEffect(() => {
+    if (!name && googleName) saveName(googleName);
+  }, [googleName]);
 
   if (askName || !name) {
     // Телефон: только карточка с именем. Десктоп: окно поверх списка.
@@ -53,6 +66,7 @@ export function GuestView({ list, user }: { list: Wishlist; user: User }) {
           <NameForm
             initial={suggested}
             ownerName={firstName(list.ownerName)}
+            offerGoogle={user.isAnonymous && !name}
             onSave={saveName}
             onCancel={name ? () => setAskName(false) : undefined}
           />
@@ -67,52 +81,120 @@ export function GuestView({ list, user }: { list: Wishlist; user: User }) {
 function NameForm({
   initial,
   ownerName,
+  offerGoogle,
   onSave,
   onCancel,
 }: {
   initial: string;
   ownerName: string;
+  offerGoogle: boolean;
   onSave: (name: string) => void;
   onCancel?: () => void;
 }) {
   const [value, setValue] = useState(initial);
+  const [bad, setBad] = useState(false);
+  const google = useGoogleSignIn();
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const n = value.trim();
     if (n) onSave(n);
+    else setBad(true);
   };
   return (
     <section className="card card-raised name-card" role="dialog" aria-label="Как тебя зовут?" style={{ marginTop: 'var(--space-4)' }}>
-      <h2 className="t-title">Как тебя зовут?</h2>
+      <h2 className="t-title">{offerGoogle ? 'Привет! Как тебя представить?' : 'Как тебя зовут?'}</h2>
       <p className="t-body muted">
         Имя увидят другие гости, когда ты забронируешь подарок. {ownerName || 'Автор'} не узнает, кто что дарит.
       </p>
-      <form className="form" onSubmit={submit}>
+      {offerGoogle && (
+        <>
+          <button className="btn btn-primary btn-lg" onClick={google.signIn} disabled={google.busy} aria-busy={google.busy}>
+            <GoogleIcon />
+            Войти через Google
+          </button>
+          <p className="t-small muted" style={{ marginTop: -6 }}>
+            Рекомендуем: твои брони сохранятся в аккаунте и не потеряются, а имя подставится само.
+          </p>
+          <ErrorBox>{google.error}</ErrorBox>
+          <div className="or-divider t-small" aria-hidden>
+            или без входа
+          </div>
+        </>
+      )}
+      <form className="form" onSubmit={submit} noValidate>
         <label className="field">
           <span className="t-label">Имя</span>
-          <input className="input"
+          <input
+            className="input"
             id="guest-name"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              setValue(e.target.value);
+              setBad(false);
+            }}
             placeholder="Например, Аня"
             maxLength={60}
-            autoFocus
-            required
+            autoFocus={!offerGoogle}
+            aria-invalid={bad}
             autoComplete="given-name"
           />
+          {bad && <span className="field-error">Напиши имя — его увидят другие гости.</span>}
         </label>
-        <button className="btn btn-primary btn-lg" type="submit">
-          Продолжить
+        <button className={`btn btn-lg${offerGoogle ? '' : ' btn-primary'}`} type="submit">
+          {offerGoogle ? 'Продолжить без входа' : 'Продолжить'}
         </button>
         {onCancel && (
-          <button className="btn" type="button" onClick={onCancel}>
+          <button className="btn btn-ghost" type="button" onClick={onCancel}>
             Отмена
           </button>
         )}
       </form>
-      <p className="t-small muted" style={{ textAlign: 'center' }}>
-        Регистрация не нужна. Имя запомнится на этом устройстве.
+      {offerGoogle && (
+        <p className="t-small muted" style={{ textAlign: 'center' }}>
+          Без входа брони хранятся только в этом браузере.
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** Вход через Google с сохранением броней: общий для шага с именем и карточки «Сохрани брони». */
+function useGoogleSignIn() {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const signIn = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return { busy, error, signIn };
+}
+
+/** Пока гость анонимный — настойчиво предлагаем привязать Google, иначе брони живут только в браузере. */
+function SaveAccountBanner() {
+  const google = useGoogleSignIn();
+  return (
+    <section className="save-banner" aria-label="Сохрани свои брони">
+      <div className="save-banner-head">
+        <ShieldIcon size={20} />
+        <h2 className="t-label">Сохрани свои брони</h2>
+      </div>
+      <p className="t-small">
+        Сейчас всё, что ты бронируешь, хранится только в этом браузере. Почистишь его или откроешь ссылку с другого
+        телефона — и брони потеряются.
       </p>
+      <button className="btn btn-primary btn-block" onClick={google.signIn} disabled={google.busy} aria-busy={google.busy}>
+        <GoogleIcon />
+        Войти через Google
+      </button>
+      <span className="t-small muted">Ничего не пропадёт: всё сделанное привяжется к аккаунту. Это твой список? Тоже входи здесь.</span>
+      <ErrorBox>{google.error}</ErrorBox>
     </section>
   );
 }
@@ -152,7 +234,7 @@ function GuestList({
   const deniedText = async (item: Item) =>
     (await isReserved(list.id, item.id))
       ? `Ой, «${item.title}» только что забронировал кто-то другой. Выбери что-нибудь ещё.`
-      : 'Не получилось: сервер отклонил запрос. Похоже, в Firebase устарели правила доступа — напиши автору списка, пусть обновит их (инструкция в README).';
+      : 'Не получилось сохранить — сервер отклонил запрос. Попробуй ещё раз чуть позже; если не поможет, напиши автору списка.';
 
   const reserve = async (item: Item) => {
     setBusyItem(item.id);
@@ -220,6 +302,7 @@ function GuestList({
     <div className="list-layout">
       <aside className="list-aside">
         <ListTitle list={list} showOwner />
+        {user.isAnonymous && <SaveAccountBanner />}
         {list.wishes && <WishesCard title={`Пожелания · ${owner}`} text={list.wishes} />}
 
         <section className="card row-between desktop-only">
@@ -252,12 +335,15 @@ function GuestList({
             <li className="t-small">Даришь что-то не из списка — добавь в «Я дарю другое».</li>
           </ul>
         </section>
-
-        {user.isAnonymous && (
-          <div className="desktop-only">
-            <OwnerLogin />
-          </div>
-        )}
+        <details className="how mobile-only">
+          <summary className="t-label">Как это работает?</summary>
+          <ul className="how-it-works">
+            <li className="t-small">Выбери подарок и нажми «Буду дарить это» — другие гости увидят, что он занят.</li>
+            <li className="t-small">Дорого одному — нажми «Подарим вместе», и другие гости смогут скинуться с тобой.</li>
+            <li className="t-small">{owner} видит только «Занято», без имён.</li>
+            <li className="t-small">Даришь что-то не из списка — добавь в «Я дарю другое».</li>
+          </ul>
+        </details>
       </aside>
 
       <section className="list-main">
@@ -398,11 +484,6 @@ function GuestList({
           )}
         </section>
 
-        {user.isAnonymous && (
-          <div className="mobile-only" style={{ alignSelf: 'center' }}>
-            <OwnerLogin />
-          </div>
-        )}
       </section>
 
       {editing?.kind === 'startGroup' && (
@@ -515,26 +596,5 @@ function GiftCard({
         )}
       </div>
     </article>
-  );
-}
-
-/** Для автора, открывшего свою ссылку на новом устройстве. */
-function OwnerLogin() {
-  const [error, setError] = useState('');
-  const login = async () => {
-    setError('');
-    try {
-      await signInWithGoogle();
-    } catch (e) {
-      setError(errorText(e));
-    }
-  };
-  return (
-    <>
-      <button className="link-btn" onClick={login}>
-        Это мой вишлист — войти через Google
-      </button>
-      <ErrorBox>{error}</ErrorBox>
-    </>
   );
 }

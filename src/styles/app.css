@@ -1289,3 +1289,108 @@ button.chip:focus-visible {
   color: var(--primary-ink);
   font-weight: 700;
 }
+
+/* ---------- «Сохрани свои брони» ---------- */
+
+.save-banner {
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  padding: 14px var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.save-banner-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--primary-ink);
+}
+
+.save-banner-head h2 {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* «Как это работает?» на телефоне — раскрывающийся блок */
+.how {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 0 var(--space-4);
+}
+
+.how summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text);
+  list-style: none;
+}
+
+.how summary::-webkit-details-marker {
+  display: none;
+}
+
+.how summary::after {
+  content: '';
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.how[open] summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.how[open] .how-it-works {
+  padding-bottom: var(--space-4);
+}
+
+/* ---------- всплывающее сообщение ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 60;
+  width: min(520px, calc(100% - 2 * var(--space-4)));
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+  animation: fade 0.15s ease;
+}
+
+.toast > span {
+  flex: 1;
+}

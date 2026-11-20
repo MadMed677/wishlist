@@ -3,11 +3,9 @@ import {
   connectAuthEmulator,
   getAuth,
   GoogleAuthProvider,
-  linkWithPopup,
   onIdTokenChanged,
   signInAnonymously,
   signInWithCredential,
-  signInWithPopup,
   signOut as fbSignOut,
   type User,
 } from 'firebase/auth';
@@ -68,35 +66,6 @@ if (useEmulators) {
       auth,
       GoogleAuthProvider.credential(JSON.stringify({ sub, name, email: `${sub}@example.com`, email_verified: true })),
     );
-}
-
-/**
- * Вход через Google (для авторов вишлистов).
- * Если сейчас вошёл анонимный гость, пробуем «привязать» Google к тому же аккаунту,
- * чтобы его брони не потерялись. Если этот Google-аккаунт уже существует — просто входим в него.
- */
-export async function signInWithGoogle(): Promise<void> {
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  const current = auth.currentUser;
-  if (current?.isAnonymous) {
-    try {
-      await linkWithPopup(current, provider);
-      await current.reload();
-      return;
-    } catch (e) {
-      const code = (e as { code?: string }).code;
-      if (code === 'auth/credential-already-in-use' || code === 'auth/email-already-in-use') {
-        const credential = GoogleAuthProvider.credentialFromError(e as never);
-        if (credential) {
-          await signInWithCredential(auth, credential);
-          return;
-        }
-      }
-      throw e;
-    }
-  }
-  await signInWithPopup(auth, provider);
 }
 
 /** Незаметный анонимный вход для гостей. */

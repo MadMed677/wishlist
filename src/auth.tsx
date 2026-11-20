@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User } from 'firebase/auth';
 import { watchUser } from './firebase';
+import { resumePendingMigration } from './migrate';
 
 interface AuthState {
   /** undefined — ещё грузится, null — не вошёл */
@@ -13,7 +14,15 @@ const AuthContext = createContext<AuthState>({ user: undefined, version: 0 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ user: undefined, version: 0 });
-  useEffect(() => watchUser((user) => setState((s) => ({ user, version: s.version + 1 }))), []);
+  useEffect(
+    () =>
+      watchUser((user) => {
+        setState((s) => ({ user, version: s.version + 1 }));
+        // если прошлый перенос броней на Google-аккаунт прервали — доделываем
+        resumePendingMigration(user).catch(() => {});
+      }),
+    [],
+  );
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
 }
 

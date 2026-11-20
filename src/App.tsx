@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from './auth';
 import { GiftIcon } from './components/icons';
 import { isFirebaseConfigured, signOut, userDisplayName } from './firebase';
@@ -7,6 +7,7 @@ import { ListPage } from './pages/ListPage';
 import { useRoute } from './router';
 import { applyTheme, firstName, loadTheme, type Theme } from './utils';
 import { ThemeMenu } from './components/ThemeMenu';
+import { CloseIcon } from './components/icons';
 
 export function App() {
   const route = useRoute();
@@ -47,6 +48,7 @@ export function App() {
         </div>
       </header>
 
+      <Notice />
       <main className="page">
         {!isFirebaseConfigured ? (
           <div className="empty">
@@ -71,5 +73,32 @@ export function App() {
         )}
       </main>
     </>
+  );
+}
+
+/** Короткие сообщения внизу экрана (например, «брони перенесены на Google-аккаунт»). */
+function Notice() {
+  const [text, setText] = useState('');
+  useEffect(() => {
+    let timer = 0;
+    const onNotice = (e: Event) => {
+      setText((e as CustomEvent<string>).detail);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setText(''), 7000);
+    };
+    window.addEventListener('wishlist:notice', onNotice);
+    return () => {
+      window.removeEventListener('wishlist:notice', onNotice);
+      window.clearTimeout(timer);
+    };
+  }, []);
+  if (!text) return null;
+  return (
+    <div className="toast t-small" role="status">
+      <span>{text}</span>
+      <button className="icon-btn" aria-label="Закрыть" onClick={() => setText('')}>
+        <CloseIcon size={18} />
+      </button>
+    </div>
   );
 }
