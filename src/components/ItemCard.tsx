@@ -1,18 +1,27 @@
 import { useState, type ReactNode } from 'react';
 import type { Item } from '../types';
 import { hostOf, priorityLabel, safeUrl } from '../utils';
-import { GiftIcon, LinkIcon } from './icons';
+import { CheckIcon, GiftIcon, LinkIcon, LockIcon } from './icons';
 import { ExternalLink } from './ui';
 
-/** Карточка пункта вишлиста. Статус брони и кнопки передаются снаружи. */
-export function ItemCard({ item, status, actions }: { item: Item; status?: ReactNode; actions?: ReactNode }) {
+/** Состояние брони, которое показывается полосой сверху карточки. */
+export type ItemMark = { tone: 'reserved' | 'mine'; text: string } | null;
+
+/** Карточка пункта вишлиста. Статус брони (`mark`) и кнопки передаются снаружи. */
+export function ItemCard({ item, mark, actions }: { item: Item; mark?: ItemMark; actions?: ReactNode }) {
   const url = safeUrl(item.url);
   const img = safeUrl(item.imageUrl);
   const [imgOk, setImgOk] = useState(true);
   const hasImg = !!img && imgOk;
 
   return (
-    <article className="item">
+    <article className={`item${mark ? ` item-${mark.tone}` : ''}`}>
+      {mark && (
+        <div className={`item-mark item-mark-${mark.tone} t-small`}>
+          {mark.tone === 'mine' ? <CheckIcon size={16} strokeWidth={2.4} /> : <LockIcon size={16} />}
+          <span>{mark.text}</span>
+        </div>
+      )}
       {hasImg ? (
         <div className="item-img">
           <img src={img} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImgOk(false)} />
@@ -35,21 +44,8 @@ export function ItemCard({ item, status, actions }: { item: Item; status?: React
             {hostOf(url)}
           </ExternalLink>
         )}
-        {(status || actions) && (
-          <div className="item-footer">
-            {status}
-            {actions}
-          </div>
-        )}
+        {actions && <div className="item-footer">{actions}</div>}
       </div>
     </article>
   );
-}
-
-export function StatusReserved({ children }: { children: ReactNode }) {
-  return <span className="status status-reserved t-small">{children}</span>;
-}
-
-export function StatusMine({ children }: { children: ReactNode }) {
-  return <span className="status status-mine t-small">{children}</span>;
 }

@@ -1,7 +1,7 @@
 import { useCallback, useState, type FormEvent } from 'react';
 import { addItem, deleteItem, updateItem, updateWishlist, useItems, useReservations } from '../api';
 import { CheckIcon, ChevronLeftIcon, CopyIcon, PlusIcon, ShareIcon } from '../components/icons';
-import { ItemCard, StatusReserved } from '../components/ItemCard';
+import { ItemCard } from '../components/ItemCard';
 import { ItemForm } from '../components/ItemForm';
 import { ErrorBox, Sheet, Spinner } from '../components/ui';
 import { errorText } from '../firebase';
@@ -90,7 +90,7 @@ export function OwnerView({ list }: { list: Wishlist }) {
               <ItemCard
                 key={item.id}
                 item={item}
-                status={reserved.has(item.id) ? <StatusReserved>Занято</StatusReserved> : null}
+                mark={reserved.has(item.id) ? { tone: 'reserved', text: 'Занято' } : null}
                 actions={
                   <div className="item-actions">
                     <button className="btn btn-sm" onClick={() => setEditing({ kind: 'item', item })}>

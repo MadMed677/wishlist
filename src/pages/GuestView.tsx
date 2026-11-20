@@ -13,7 +13,7 @@ import {
 } from '../api';
 import { GiftForm } from '../components/GiftForm';
 import { LinkIcon, PlusIcon } from '../components/icons';
-import { ItemCard, StatusMine, StatusReserved } from '../components/ItemCard';
+import { ItemCard } from '../components/ItemCard';
 import { ErrorBox, ExternalLink, Sheet, Spinner } from '../components/ui';
 import { errorText, signInWithGoogle } from '../firebase';
 import type { GuestGift, Item, Wishlist } from '../types';
@@ -240,23 +240,21 @@ function GuestList({
                 <ItemCard
                   key={item.id}
                   item={item}
-                  status={
-                    res ? (
-                      mine ? (
-                        <StatusMine>Это даришь ты</StatusMine>
-                      ) : (
-                        <StatusReserved>Дарит {who || 'кто-то из гостей'}</StatusReserved>
-                      )
-                    ) : null
+                  mark={
+                    res
+                      ? mine
+                        ? { tone: 'mine', text: 'Это даришь ты' }
+                        : { tone: 'reserved', text: `Дарит ${who || 'кто-то из гостей'}` }
+                      : null
                   }
                   actions={
                     !res ? (
                       <button className="btn btn-primary btn-block" onClick={() => reserve(item)} disabled={busy}>
-                        {busy ? 'Секунду…' : 'Буду дарить это'}
+                        Буду дарить это
                       </button>
                     ) : mine ? (
                       <button className="btn btn-block" onClick={() => cancel(item)} disabled={busy}>
-                        {busy ? 'Секунду…' : 'Отменить бронь'}
+                        Отменить бронь
                       </button>
                     ) : null
                   }

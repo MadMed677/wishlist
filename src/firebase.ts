@@ -11,7 +11,7 @@ import {
   signOut as fbSignOut,
   type User,
 } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, disableNetwork, enableNetwork, initializeFirestore } from 'firebase/firestore';
 
 // Конфиг Firebase-проекта wishlist-24cee.
 // Firebase Console → ⚙️ Project settings → General → Your apps → Web app → SDK setup and configuration → Config.
@@ -37,7 +37,26 @@ export const app = initializeApp(
 );
 export const auth = getAuth(app);
 auth.languageCode = 'ru';
-export const db = getFirestore(app);
+// Long polling вместо стримингового соединения: некоторые сети, прокси и антивирусы
+// буферизуют поток, и realtime-обновления приходят с задержкой ~30 секунд.
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+// Телефоны «усыпляют» фоновые вкладки, и соединение потом долго восстанавливается.
+// Когда пользователь возвращается на вкладку или появляется сеть — переподключаемся сразу.
+let hiddenAt = 0;
+function reconnect() {
+  disableNetwork(db)
+    .then(() => enableNetwork(db))
+    .catch(() => {});
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') hiddenAt = Date.now();
+  else if (hiddenAt && Date.now() - hiddenAt > 3000) reconnect();
+});
+window.addEventListener('online', reconnect);
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) reconnect();
+});
 
 if (useEmulators) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });

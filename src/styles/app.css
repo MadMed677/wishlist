@@ -724,6 +724,42 @@ textarea::placeholder {
   flex-direction: column;
 }
 
+/* Бронь — на самой карточке: полоса сверху + рамка того же цвета */
+.item-reserved {
+  border-color: var(--reserved-ink);
+}
+
+.item-mine {
+  border-color: var(--mine-ink);
+}
+
+.item-mark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 14px;
+  font-weight: 700;
+}
+
+.item-mark svg {
+  flex-shrink: 0;
+}
+
+.item-mark-reserved {
+  background: var(--reserved-soft);
+  color: var(--reserved-ink);
+}
+
+.item-mark-mine {
+  background: var(--mine-soft);
+  color: var(--mine-ink);
+}
+
+/* Чужой подарок: картинка приглушена, чтобы взгляд шёл к свободным */
+.item-reserved .item-img {
+  opacity: 0.55;
+}
+
 .item-img {
   height: 132px;
   background: var(--surface-2);
