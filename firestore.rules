@@ -1,0 +1,129 @@
+rules_version = '2';
+
+// Правила безопасности вишлиста. Описание модели — в CLAUDE.md.
+// Деплой: Firebase Console → Firestore Database → Rules → вставить этот файл → Publish
+// (или `firebase deploy --only firestore:rules`).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAnonymous() {
+      return request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    function listPath(listId) {
+      return /databases/$(database)/documents/wishlists/$(listId);
+    }
+
+    // Текущий пользователь — автор списка listId.
+    function isOwner(listId) {
+      return signedIn() && get(listPath(listId)).data.ownerUid == request.auth.uid;
+    }
+
+    // Авторизован (в т.ч. анонимно), список существует и пользователь — НЕ его автор.
+    function isGuest(listId) {
+      return signedIn()
+        && exists(listPath(listId))
+        && get(listPath(listId)).data.ownerUid != request.auth.uid;
+    }
+
+    function optString(data, field, maxLen) {
+      return !(field in data) || data[field] == null
+        || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    function validTitle(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200;
+    }
+
+    function validGuestName(data) {
+      return data.guestName is string && data.guestName.size() > 0 && data.guestName.size() <= 60;
+    }
+
+    match /wishlists/{listId} {
+      allow read: if signedIn();
+
+      // Создавать списки могут только вошедшие через Google (не анонимные гости).
+      allow create: if signedIn()
+        && !isAnonymous()
+        && request.resource.data.ownerUid == request.auth.uid
+        && validTitle(request.resource.data)
+        && optString(request.resource.data, 'ownerName', 100)
+        && optString(request.resource.data, 'eventDate', 20);
+
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && validTitle(request.resource.data)
+        && optString(request.resource.data, 'ownerName', 100)
+        && optString(request.resource.data, 'eventDate', 20);
+
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+
+      // Пункты вишлиста: читают все, пишет только автор.
+      match /items/{itemId} {
+        allow read: if signedIn();
+        allow create, update: if isOwner(listId)
+          && validTitle(request.resource.data)
+          && request.resource.data.priority in [1, 2, 3]
+          && optString(request.resource.data, 'description', 2000)
+          && optString(request.resource.data, 'url', 2000)
+          && optString(request.resource.data, 'imageUrl', 2000)
+          && optString(request.resource.data, 'price', 50);
+        allow delete: if isOwner(listId);
+      }
+
+      // Факт брони (ID = ID пункта). Видят все, включая автора («Занято»).
+      // Только create — update запрещён, поэтому двойная бронь невозможна.
+      match /reservations/{itemId} {
+        allow read: if signedIn();
+        allow create: if isGuest(listId)
+          && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+          && request.resource.data.uid == request.auth.uid
+          && exists(/databases/$(database)/documents/wishlists/$(listId)/items/$(itemId))
+          // детали брони должны создаваться тем же batch-ом
+          && getAfter(/databases/$(database)/documents/wishlists/$(listId)/reservationDetails/$(itemId)).data.uid == request.auth.uid;
+        // Снять бронь: сам бронировавший или автор (при удалении пункта).
+        allow delete: if signedIn()
+          && (isOwner(listId) || resource.data.uid == request.auth.uid);
+      }
+
+      // Кто забронировал. Автор НЕ видит.
+      match /reservationDetails/{itemId} {
+        allow read: if isGuest(listId);
+        allow create: if isGuest(listId)
+          && request.resource.data.keys().hasOnly(['uid', 'guestName'])
+          && request.resource.data.uid == request.auth.uid
+          && validGuestName(request.resource.data)
+          && getAfter(/databases/$(database)/documents/wishlists/$(listId)/reservations/$(itemId)).data.uid == request.auth.uid;
+        // Автор может удалить (вместе с пунктом), но не прочитать.
+        allow delete: if signedIn()
+          && (isOwner(listId) || resource.data.uid == request.auth.uid);
+      }
+
+      // Подарки «Я дарю другое». Автор НЕ видит вообще.
+      match /guestGifts/{giftId} {
+        allow read: if isGuest(listId);
+        allow create: if isGuest(listId)
+          && request.resource.data.uid == request.auth.uid
+          && validGuestName(request.resource.data)
+          && validTitle(request.resource.data)
+          && optString(request.resource.data, 'description', 2000)
+          && optString(request.resource.data, 'url', 2000)
+          && optString(request.resource.data, 'price', 50);
+        allow update: if isGuest(listId)
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && validGuestName(request.resource.data)
+          && validTitle(request.resource.data)
+          && optString(request.resource.data, 'description', 2000)
+          && optString(request.resource.data, 'url', 2000)
+          && optString(request.resource.data, 'price', 50);
+        allow delete: if isGuest(listId) && resource.data.uid == request.auth.uid;
+      }
+    }
+  }
+}
