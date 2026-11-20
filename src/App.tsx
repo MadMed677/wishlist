@@ -1,26 +1,24 @@
 import { useState } from 'react';
 import { useAuth } from './auth';
-import { MoonIcon, GiftIcon, SunIcon } from './components/icons';
+import { GiftIcon } from './components/icons';
 import { isFirebaseConfigured, signOut, userDisplayName } from './firebase';
 import { Home } from './pages/Home';
 import { ListPage } from './pages/ListPage';
 import { useRoute } from './router';
-import { applyTheme, firstName, loadTheme, resolvedTheme, type Theme } from './utils';
+import { applyTheme, firstName, loadTheme, type Theme } from './utils';
+import { ThemeMenu } from './components/ThemeMenu';
 
 export function App() {
   const route = useRoute();
   const { user } = useAuth();
   const [theme, setTheme] = useState<Theme>(loadTheme);
-  const shown = resolvedTheme(theme);
 
-  const toggleTheme = () => {
-    const next: Theme = shown === 'dark' ? 'light' : 'dark';
+  const changeTheme = (next: Theme) => {
     applyTheme(next);
     setTheme(next);
   };
 
   const author = user && !user.isAnonymous ? userDisplayName(user) : null;
-  const themeLabel = shown === 'dark' ? 'Светлая тема' : 'Тёмная тема';
 
   return (
     <>
@@ -31,9 +29,7 @@ export function App() {
             Вишлист
           </a>
           <div className="topbar-actions">
-            <button className="icon-btn" onClick={toggleTheme} title={themeLabel} aria-label={themeLabel}>
-              {shown === 'dark' ? <SunIcon /> : <MoonIcon />}
-            </button>
+            <ThemeMenu theme={theme} onChange={changeTheme} />
             {author && (
               <>
                 <span className="user-chip desktop-only">

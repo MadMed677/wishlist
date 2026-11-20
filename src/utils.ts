@@ -141,12 +141,6 @@ export function applyTheme(t: Theme) {
   }
 }
 
-/** Какая тема видна сейчас (с учётом системной). */
-export function resolvedTheme(t: Theme): 'light' | 'dark' {
-  if (t !== 'auto') return t;
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
 export function shareUrl(listId: string): string {
   return `${location.origin}${location.pathname}#/list/${listId}`;
 }
