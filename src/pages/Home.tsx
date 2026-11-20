@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { createWishlist, useItems, useMyWishlists, useReservations } from '../api';
 import { useAuth } from '../auth';
 import { CakeIcon, ChevronRightIcon, GoogleIcon } from '../components/icons';
+import { CardMark } from '../components/ItemCard';
 import { ErrorBox, Spinner } from '../components/ui';
 import { errorText, signInWithGoogle, signOut, userDisplayName } from '../firebase';
 import { navigate } from '../router';
@@ -52,25 +53,31 @@ function Landing() {
       </section>
 
       <section className="landing-preview desktop-only" aria-label="Пример списка глазами гостя">
-        <div className="card card-raised" style={{ padding: 'var(--space-5)' }}>
-          <div className="row-between" style={{ alignItems: 'baseline', paddingBottom: 'var(--space-4)' }}>
-            <span className="t-title">День рождения — 30!</span>
-            <span className="t-small muted">через 24 дня</span>
-          </div>
-          <div className="preview-row">
-            <span className="t-item">Наушники с шумодавом</span>
-            <span className="status status-reserved t-small">Дарит Боря</span>
-          </div>
-          <div className="preview-row">
-            <span className="t-item">Ручная кофемолка</span>
-            <span className="status status-mine t-small">Это даришь ты</span>
-          </div>
-          <div className="preview-row">
-            <span className="t-item">Настольная игра «Каркассон»</span>
-            <span className="btn btn-primary btn-sm" aria-hidden>
-              Буду дарить это
-            </span>
-          </div>
+        <div className="row-between" style={{ alignItems: 'baseline' }}>
+          <span className="t-title">День рождения — 30!</span>
+          <span className="t-small muted">через 24 дня</span>
+        </div>
+        <div className="preview-cards">
+          <article className="item item-reserved">
+            <CardMark mark={{ tone: 'reserved', text: 'Дарит Боря' }} />
+            <div className="item-body">
+              <span className="t-item">Наушники с шумодавом</span>
+            </div>
+          </article>
+          <article className="item item-mine">
+            <CardMark mark={{ tone: 'mine', text: 'Это даришь ты' }} />
+            <div className="item-body">
+              <span className="t-item">Ручная кофемолка</span>
+            </div>
+          </article>
+          <article className="item">
+            <div className="item-body">
+              <span className="t-item">Настольная игра «Каркассон»</span>
+              <span className="btn btn-primary btn-sm" aria-hidden>
+                Буду дарить это
+              </span>
+            </div>
+          </article>
         </div>
         <p className="t-small muted">Так список видят гости. Автор видит только «Занято», без имён.</p>
       </section>

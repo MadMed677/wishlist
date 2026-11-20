@@ -498,17 +498,17 @@ textarea::placeholder {
   gap: var(--space-3);
 }
 
-.preview-row {
+.preview-cards {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.preview-cards .item-body {
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--border);
-}
-
-.preview-row:last-child {
-  padding-bottom: 0;
 }
 
 @media (min-width: 900px) {
@@ -860,40 +860,9 @@ textarea::placeholder {
   color: var(--primary-ink);
 }
 
-.badge-mine {
-  background: var(--mine-soft);
-  color: var(--mine-ink);
-}
-
-.status {
-  padding: 7px 10px;
-  border-radius: var(--radius-sm);
-  font-weight: 700;
-}
-
-.status-reserved {
-  background: var(--reserved-soft);
-  color: var(--reserved-ink);
-}
-
-.status-mine {
-  background: var(--mine-soft);
-  color: var(--mine-ink);
-}
-
+/* «Я дарю другое»: та же карточка со статусом, но пунктирная рамка — подарок не из списка */
 .gift {
   border-style: dashed;
-  border-color: var(--border-strong);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-@media (min-width: 900px) {
-  .gift {
-    padding: var(--space-4);
-  }
 }
 
 .other-gifts {

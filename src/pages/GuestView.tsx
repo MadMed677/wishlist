@@ -13,7 +13,7 @@ import {
 } from '../api';
 import { GiftForm } from '../components/GiftForm';
 import { LinkIcon, PlusIcon } from '../components/icons';
-import { ItemCard } from '../components/ItemCard';
+import { CardMark, ItemCard } from '../components/ItemCard';
 import { ErrorBox, ExternalLink, Sheet, Spinner } from '../components/ui';
 import { errorText, signInWithGoogle } from '../firebase';
 import type { GuestGift, Item, Wishlist } from '../types';
@@ -347,30 +347,35 @@ function GiftCard({
   onDelete: () => void;
 }) {
   const url = safeUrl(gift.url);
+  const tone = mine ? 'mine' : 'reserved';
   return (
-    <article className="card gift">
-      <div className="item-meta">
-        <span className={`badge t-caption${mine ? ' badge-mine' : ''}`}>{mine ? 'Ты' : `Дарит ${gift.guestName}`}</span>
-        {gift.price && <span className="price t-small">{gift.price}</span>}
-      </div>
-      <h3 className="item-title t-item">{gift.title}</h3>
-      {gift.description && <p className="item-desc t-small">{gift.description}</p>}
-      {url && (
-        <ExternalLink href={url} className="item-link t-small">
-          <LinkIcon size={14} />
-          {hostOf(url)}
-        </ExternalLink>
-      )}
-      {mine && (
-        <div className="item-actions" style={{ paddingTop: 'var(--space-2)' }}>
-          <button className="btn btn-sm" onClick={onEdit}>
-            Изменить
-          </button>
-          <button className="btn btn-sm btn-danger" onClick={onDelete}>
-            Удалить
-          </button>
+    <article className={`item gift item-${tone}`}>
+      <CardMark mark={{ tone, text: mine ? 'Это даришь ты' : `Дарит ${gift.guestName}` }} />
+      <div className="item-body">
+        <div className="item-meta" style={{ alignItems: 'baseline' }}>
+          <h3 className="item-title t-item">{gift.title}</h3>
+          {gift.price && <span className="price t-small">{gift.price}</span>}
         </div>
-      )}
+        {gift.description && <p className="item-desc t-small">{gift.description}</p>}
+        {url && (
+          <ExternalLink href={url} className="item-link t-small">
+            <LinkIcon size={14} />
+            {hostOf(url)}
+          </ExternalLink>
+        )}
+        {mine && (
+          <div className="item-footer">
+            <div className="item-actions">
+              <button className="btn btn-sm" onClick={onEdit}>
+                Изменить
+              </button>
+              <button className="btn btn-sm btn-danger" onClick={onDelete}>
+                Удалить
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </article>
   );
 }

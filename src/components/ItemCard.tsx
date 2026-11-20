@@ -16,12 +16,7 @@ export function ItemCard({ item, mark, actions }: { item: Item; mark?: ItemMark;
 
   return (
     <article className={`item${mark ? ` item-${mark.tone}` : ''}`}>
-      {mark && (
-        <div className={`item-mark item-mark-${mark.tone} t-small`}>
-          {mark.tone === 'mine' ? <CheckIcon size={16} strokeWidth={2.4} /> : <LockIcon size={16} />}
-          <span>{mark.text}</span>
-        </div>
-      )}
+      {mark && <CardMark mark={mark} />}
       {hasImg ? (
         <div className="item-img">
           <img src={img} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImgOk(false)} />
@@ -47,5 +42,15 @@ export function ItemCard({ item, mark, actions }: { item: Item; mark?: ItemMark;
         {actions && <div className="item-footer">{actions}</div>}
       </div>
     </article>
+  );
+}
+
+/** Полоса статуса сверху карточки — одна для всех карточек (желания, «Я дарю другое», превью). */
+export function CardMark({ mark }: { mark: NonNullable<ItemMark> }) {
+  return (
+    <div className={`item-mark item-mark-${mark.tone} t-small`}>
+      {mark.tone === 'mine' ? <CheckIcon size={16} strokeWidth={2.4} /> : <LockIcon size={16} />}
+      <span>{mark.text}</span>
+    </div>
   );
 }

@@ -37,9 +37,10 @@ export const app = initializeApp(
 );
 export const auth = getAuth(app);
 auth.languageCode = 'ru';
-// Long polling вместо стримингового соединения: некоторые сети, прокси и антивирусы
-// буферизуют поток, и realtime-обновления приходят с задержкой ~30 секунд.
-export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+// Транспорт по умолчанию: потоковое соединение (WebChannel), SDK сам переходит на long polling,
+// если поток не проходит. Если в какой-то сети обновления опаздывают на ~30 секунд
+// (прокси/антивирус буферизует поток) — можно включить { experimentalForceLongPolling: true }.
+export const db = initializeFirestore(app, {});
 
 // Телефоны «усыпляют» фоновые вкладки, и соединение потом долго восстанавливается.
 // Когда пользователь возвращается на вкладку или появляется сеть — переподключаемся сразу.
