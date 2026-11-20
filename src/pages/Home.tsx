@@ -4,6 +4,7 @@ import { useAuth } from '../auth';
 import { CakeIcon, ChevronRightIcon, GoogleIcon } from '../components/icons';
 import { CardMark } from '../components/ItemCard';
 import { ErrorBox, Spinner } from '../components/ui';
+import { WishesField } from '../components/Wishes';
 import { errorText, signInWithGoogle, signOut, userDisplayName } from '../firebase';
 import { navigate } from '../router';
 import type { Wishlist } from '../types';
@@ -89,6 +90,7 @@ function MyLists({ uid, name }: { uid: string; name: string }) {
   const lists = useMyWishlists(uid);
   const [title, setTitle] = useState('');
   const [eventDate, setEventDate] = useState('');
+  const [wishes, setWishes] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -99,7 +101,7 @@ function MyLists({ uid, name }: { uid: string; name: string }) {
     setBusy(true);
     setError('');
     try {
-      const id = await createWishlist(uid, name, t, eventDate);
+      const id = await createWishlist(uid, name, t, eventDate, wishes.trim());
       navigate(`/list/${id}`);
     } catch (err) {
       setError(errorText(err));
@@ -138,6 +140,10 @@ function MyLists({ uid, name }: { uid: string; name: string }) {
               <span className="t-label">Дата события</span>
               <input id="list-date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
             </label>
+            <WishesField id="list-wishes" value={wishes} onChange={setWishes} rows={3} label="Пожелания для гостей (необязательно)" />
+            <p className="t-small muted" style={{ marginTop: -6 }}>
+              Что тебе в целом нравится и чего дарить не стоит. Можно дописать потом.
+            </p>
             <ErrorBox>{error}</ErrorBox>
             <button className="btn btn-primary" type="submit" disabled={busy}>
               {busy ? 'Создаю…' : 'Создать'}

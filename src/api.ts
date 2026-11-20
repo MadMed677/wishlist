@@ -52,6 +52,7 @@ const toWishlist = (id: string, d: DocumentData): Wishlist => ({
   ownerName: d.ownerName ?? '',
   title: d.title ?? '',
   eventDate: d.eventDate ?? '',
+  wishes: d.wishes ?? '',
   createdAt: d.createdAt ?? null,
 });
 
@@ -146,18 +147,25 @@ function millis(t: { toMillis(): number } | null, fallback = 0): number {
 
 // ---------- вишлисты ----------
 
-export async function createWishlist(ownerUid: string, ownerName: string, title: string, eventDate: string): Promise<string> {
+export async function createWishlist(
+  ownerUid: string,
+  ownerName: string,
+  title: string,
+  eventDate: string,
+  wishes: string,
+): Promise<string> {
   const ref = await addDoc(collection(db, 'wishlists'), {
     ownerUid,
     ownerName,
     title,
     eventDate,
+    wishes,
     createdAt: serverTimestamp(),
   });
   return ref.id;
 }
 
-export function updateWishlist(listId: string, data: { title: string; eventDate: string }) {
+export function updateWishlist(listId: string, data: Partial<{ title: string; eventDate: string; wishes: string }>) {
   return updateDoc(listDoc(listId), data);
 }
 

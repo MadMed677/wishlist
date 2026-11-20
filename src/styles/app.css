@@ -330,7 +330,8 @@ button {
   min-width: 0;
 }
 
-.field > span {
+.field > span,
+.field > label {
   color: var(--text-muted);
 }
 
@@ -1025,5 +1026,108 @@ textarea::placeholder {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* ---------- пожелания автора ---------- */
+
+.wishes {
+  background: var(--primary-soft);
+  border-radius: var(--radius-lg);
+  padding: 14px var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.wishes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.wishes-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--primary-ink);
+}
+
+.wishes-title svg {
+  flex-shrink: 0;
+}
+
+.wishes-text {
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.wishes-text.is-clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+
+.wishes-compact {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  gap: 6px;
+}
+
+.wishes-compact .wishes-text.is-clamped {
+  -webkit-line-clamp: 3;
+}
+
+.wishes-more {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  align-self: flex-start;
+  color: var(--primary-ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.wishes-edit {
+  appearance: none;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--primary-ink);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.wishes-empty {
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+button.chip {
+  appearance: none;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+}
+
+@media (min-width: 900px) {
+  .wishes {
+    padding: var(--space-4);
   }
 }

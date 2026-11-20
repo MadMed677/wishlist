@@ -4,12 +4,13 @@ import { CheckIcon, ChevronLeftIcon, CopyIcon, PlusIcon, ShareIcon } from '../co
 import { ItemCard } from '../components/ItemCard';
 import { ItemForm } from '../components/ItemForm';
 import { ErrorBox, Sheet, Spinner } from '../components/ui';
+import { WishesCard, WishesEmpty, WishesForm } from '../components/Wishes';
 import { errorText } from '../firebase';
 import type { Item, Wishlist } from '../types';
 import { shareUrl, wishesCount } from '../utils';
 import { ListTitle } from './ListPage';
 
-type Editing = { kind: 'new' } | { kind: 'item'; item: Item } | { kind: 'list' } | null;
+type Editing = { kind: 'new' } | { kind: 'item'; item: Item } | { kind: 'list' } | { kind: 'wishes' } | null;
 
 export function OwnerView({ list }: { list: Wishlist }) {
   const items = useItems(list.id);
@@ -45,6 +46,20 @@ export function OwnerView({ list }: { list: Wishlist }) {
         </a>
         <ListTitle list={list} showOwner={false} />
         <ShareBox listId={list.id} title={list.title} />
+        {list.wishes ? (
+          <WishesCard
+            title="Твои пожелания"
+            text={list.wishes}
+            action={
+              <button className="wishes-edit t-label" onClick={() => setEditing({ kind: 'wishes' })}>
+                Изменить
+              </button>
+            }
+            footer={<span className="t-small muted">Гости видят это над списком.</span>}
+          />
+        ) : (
+          <WishesEmpty onWrite={() => setEditing({ kind: 'wishes' })} />
+        )}
         <div className="row-between desktop-only" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
           <span className="t-small muted">
             {wishesCount(items.data.length)} · занято {takenCount}
@@ -132,6 +147,18 @@ export function OwnerView({ list }: { list: Wishlist }) {
             onCancel={close}
             onSubmit={async (data) => {
               await updateItem(list.id, editing.item.id, data);
+              close();
+            }}
+          />
+        </Sheet>
+      )}
+      {editing?.kind === 'wishes' && (
+        <Sheet title="Пожелания" onClose={close}>
+          <WishesForm
+            initial={list.wishes}
+            onCancel={close}
+            onSubmit={async (wishes) => {
+              await updateWishlist(list.id, { wishes });
               close();
             }}
           />

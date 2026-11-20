@@ -4,17 +4,20 @@ import type { GiftData } from '../types';
 import { safeUrl } from '../utils';
 import { EyeOffIcon } from './icons';
 import { ErrorBox } from './ui';
+import { WishesCard } from './Wishes';
 
 const EMPTY: GiftData = { title: '', description: '', url: '', price: '' };
 
 export function GiftForm({
   ownerName,
+  wishes,
   initial,
   submitLabel,
   onSubmit,
   onCancel,
 }: {
   ownerName: string;
+  wishes?: string;
   initial?: GiftData;
   submitLabel: string;
   onSubmit: (data: GiftData) => Promise<void>;
@@ -43,6 +46,7 @@ export function GiftForm({
 
   return (
     <form className="form" onSubmit={submit}>
+      {wishes && <WishesCard compact title={`${ownerName || 'Автор'} просит учесть`} text={wishes} />}
       <div className="note t-small">
         <EyeOffIcon />
         <span>{ownerName || 'Автор'} этого не увидит. Видно только другим гостям — чтобы никто не купил то же самое.</span>

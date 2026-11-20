@@ -38,7 +38,8 @@ export function ListPage({ listId }: { listId: string }) {
 
 /** Название, автор и дата — шапка боковой колонки. */
 export function ListTitle({ list, showOwner }: { list: Wishlist; showOwner: boolean }) {
-  const owner = showOwner && list.ownerName ? `от ${firstName(list.ownerName)}` : '';
+  // Имена не склоняем (Айгерим, Асель…), поэтому просто «Артём · дата».
+  const owner = showOwner && list.ownerName ? firstName(list.ownerName) : '';
   return (
     <section className="list-title">
       <h1 className="t-hero">{list.title}</h1>

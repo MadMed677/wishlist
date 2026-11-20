@@ -15,6 +15,7 @@ import { GiftForm } from '../components/GiftForm';
 import { LinkIcon, PlusIcon } from '../components/icons';
 import { CardMark, ItemCard } from '../components/ItemCard';
 import { ErrorBox, ExternalLink, Sheet, Spinner } from '../components/ui';
+import { WishesCard } from '../components/Wishes';
 import { errorText, signInWithGoogle } from '../firebase';
 import type { GuestGift, Item, Wishlist } from '../types';
 import { firstName, hostOf, loadGuestName, plural, safeUrl, saveGuestName } from '../utils';
@@ -180,6 +181,7 @@ function GuestList({
     <div className="list-layout">
       <aside className="list-aside">
         <ListTitle list={list} showOwner />
+        {list.wishes && <WishesCard title={`Пожелания · ${owner}`} text={list.wishes} />}
 
         <section className="card row-between desktop-only">
           <span className="stack" style={{ gap: 2 }}>
@@ -227,7 +229,7 @@ function GuestList({
           <Spinner />
         ) : items.data.length === 0 ? (
           <div className="empty">
-            <span className="t-small">{owner} пока ничего не добавил. Загляни позже — или подари что-то своё ниже.</span>
+            <span className="t-small">В списке пока пусто. Загляни позже — или подари что-то своё ниже.</span>
           </div>
         ) : (
           <div className="items">
@@ -308,6 +310,7 @@ function GuestList({
         <Sheet title="Я дарю другое" onClose={close}>
           <GiftForm
             ownerName={owner}
+            wishes={list.wishes}
             submitLabel="Добавить"
             onCancel={close}
             onSubmit={async (data) => {
@@ -321,6 +324,7 @@ function GuestList({
         <Sheet title="Изменить подарок" onClose={close}>
           <GiftForm
             ownerName={owner}
+            wishes={list.wishes}
             initial={editing.gift}
             submitLabel="Сохранить"
             onCancel={close}

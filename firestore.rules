@@ -52,14 +52,16 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && validTitle(request.resource.data)
         && optString(request.resource.data, 'ownerName', 100)
-        && optString(request.resource.data, 'eventDate', 20);
+        && optString(request.resource.data, 'eventDate', 20)
+        && optString(request.resource.data, 'wishes', 1000);
 
       allow update: if signedIn()
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == resource.data.ownerUid
         && validTitle(request.resource.data)
         && optString(request.resource.data, 'ownerName', 100)
-        && optString(request.resource.data, 'eventDate', 20);
+        && optString(request.resource.data, 'eventDate', 20)
+        && optString(request.resource.data, 'wishes', 1000);
 
       allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
 

@@ -8,6 +8,7 @@ export interface Wishlist {
   ownerName: string;
   title: string;
   eventDate: string; // YYYY-MM-DD или ''
+  wishes: string; // «Пожелания» автора — свободный текст для гостей, может быть ''
   createdAt: Timestamp | null;
 }
 
