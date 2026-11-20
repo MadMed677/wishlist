@@ -3,9 +3,11 @@ import {
   addDoc,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   onSnapshot,
   query,
+  runTransaction,
   serverTimestamp,
   updateDoc,
   where,
@@ -110,14 +112,24 @@ export function useItems(listId: string): Live<Item[]> {
 }
 
 export function useReservations(listId: string): Live<Reservation[]> {
-  return useLiveQuery(sub(listId, 'reservations'), (id, d) => ({ id, uid: d.uid }), [listId]);
+  return useLiveQuery(sub(listId, 'reservations'), (id, d) => ({ id, uid: d.uid, group: d.group === true }), [listId]);
 }
 
 /** Только для гостей: правила не дают автору читать эту коллекцию. */
 export function useReservationDetails(listId: string, enabled: boolean): Live<ReservationDetail[]> {
   return useLiveQuery(
     enabled ? sub(listId, 'reservationDetails') : null,
-    (id, d) => ({ id, uid: d.uid, guestName: d.guestName ?? '' }),
+    (id, d): ReservationDetail => ({
+      id,
+      uid: d.uid,
+      guestName: d.guestName ?? '',
+      group: d.group === true,
+      members: Object.entries((d.members ?? {}) as Record<string, { name?: string; at?: { toMillis(): number } | null }>)
+        .map(([uid, m]) => ({ uid, name: m?.name ?? '', at: m?.at ? m.at.toMillis() : Number.MAX_SAFE_INTEGER }))
+        .sort((x, y) => x.at - y.at),
+      note: d.note ?? '',
+      noteBy: d.noteBy ?? '',
+    }),
     [listId, enabled],
   );
 }
@@ -208,6 +220,56 @@ export function cancelReservation(listId: string, itemId: string) {
   batch.delete(doc(sub(listId, 'reservations'), itemId));
   batch.delete(doc(sub(listId, 'reservationDetails'), itemId));
   return batch.commit();
+}
+
+// ---------- «Подарим вместе» (гость) ----------
+
+/** Открыть сбор: бронь с group: true + детали с первым участником, одним batch-ом. */
+export function startGroup(listId: string, itemId: string, uid: string, guestName: string, note: string) {
+  const batch = writeBatch(db);
+  batch.set(doc(sub(listId, 'reservations'), itemId), { uid, group: true, createdAt: serverTimestamp() });
+  batch.set(doc(sub(listId, 'reservationDetails'), itemId), {
+    uid,
+    guestName,
+    group: true,
+    members: { [uid]: { name: guestName, at: serverTimestamp() } },
+    note,
+    noteBy: note ? guestName : '',
+  });
+  return batch.commit();
+}
+
+export class GroupGoneError extends Error {}
+
+/** Присоединиться к сбору. */
+export function joinGroup(listId: string, itemId: string, uid: string, name: string) {
+  const ref = doc(sub(listId, 'reservationDetails'), itemId);
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists() || snap.data().group !== true) throw new GroupGoneError('Сбор уже закрыт');
+    tx.update(ref, { [`members.${uid}`]: { name, at: serverTimestamp() } });
+  });
+}
+
+/** Выйти из сбора. Последний участник освобождает подарок (удаляет бронь). */
+export function leaveGroup(listId: string, itemId: string, uid: string) {
+  const detailsRef = doc(sub(listId, 'reservationDetails'), itemId);
+  const resRef = doc(sub(listId, 'reservations'), itemId);
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(detailsRef);
+    if (!snap.exists()) return;
+    const members = Object.keys(snap.data().members ?? {});
+    if (members.length <= 1) {
+      tx.delete(resRef);
+      tx.delete(detailsRef);
+    } else {
+      tx.update(detailsRef, { [`members.${uid}`]: deleteField() });
+    }
+  });
+}
+
+export function updateGroupNote(listId: string, itemId: string, note: string, noteBy: string) {
+  return updateDoc(doc(sub(listId, 'reservationDetails'), itemId), { note, noteBy: note ? noteBy : '' });
 }
 
 // ---------- «Я дарю другое» (гость) ----------

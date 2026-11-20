@@ -4,6 +4,11 @@ import {
   addGuestGift,
   cancelReservation,
   deleteGuestGift,
+  GroupGoneError,
+  joinGroup,
+  leaveGroup,
+  startGroup,
+  updateGroupNote,
   reserveItem,
   updateGuestGift,
   useGuestGifts,
@@ -12,7 +17,8 @@ import {
   useReservations,
 } from '../api';
 import { GiftForm } from '../components/GiftForm';
-import { LinkIcon, PlusIcon } from '../components/icons';
+import { GroupInfo, GroupNoteForm, GroupStartForm, groupMark } from '../components/Group';
+import { LinkIcon, PlusIcon, UsersIcon } from '../components/icons';
 import { CardMark, ItemCard } from '../components/ItemCard';
 import { ErrorBox, ExternalLink, Sheet, Spinner } from '../components/ui';
 import { WishesCard } from '../components/Wishes';
@@ -110,7 +116,12 @@ function NameForm({
   );
 }
 
-type Editing = { kind: 'newGift' } | { kind: 'gift'; gift: GuestGift } | null;
+type Editing =
+  | { kind: 'newGift' }
+  | { kind: 'gift'; gift: GuestGift }
+  | { kind: 'startGroup'; item: Item }
+  | { kind: 'groupNote'; item: Item; note: string }
+  | null;
 
 function GuestList({
   list,
@@ -134,7 +145,7 @@ function GuestList({
   const owner = firstName(list.ownerName) || 'Автор';
 
   const resByItem = new Map(reservations.data.map((r) => [r.id, r]));
-  const nameByItem = new Map(details.data.map((d) => [d.id, d.guestName]));
+  const detailsByItem = new Map(details.data.map((d) => [d.id, d]));
 
   const reserve = async (item: Item) => {
     setBusyItem(item.id);
@@ -147,6 +158,25 @@ function GuestList({
         code === 'permission-denied'
           ? `Ой, «${item.title}» только что забронировал кто-то другой. Выбери что-нибудь ещё.`
           : errorText(e),
+      );
+    } finally {
+      setBusyItem(null);
+    }
+  };
+
+  const run = async (item: Item, action: () => Promise<unknown>, raceText?: string) => {
+    setBusyItem(item.id);
+    setError('');
+    try {
+      await action();
+    } catch (e) {
+      const code = (e as { code?: string }).code;
+      setError(
+        e instanceof GroupGoneError
+          ? 'Этот сбор уже закрыт — все участники вышли.'
+          : code === 'permission-denied' && raceText
+            ? raceText
+            : errorText(e),
       );
     } finally {
       setBusyItem(null);
@@ -174,7 +204,13 @@ function GuestList({
     }
   };
 
-  const myCount = items.data.filter((i) => resByItem.get(i.id)?.uid === user.uid).length;
+  const isMine = (itemId: string) => {
+    const res = resByItem.get(itemId);
+    if (!res) return false;
+    if (res.group) return !!detailsByItem.get(itemId)?.members.some((m) => m.uid === user.uid);
+    return res.uid === user.uid;
+  };
+  const myCount = items.data.filter((i) => isMine(i.id)).length;
   const myCountText = myCount > 0 ? `Даришь: ${myCount} ${plural(myCount, 'подарок', 'подарка', 'подарков')}` : 'Пока ничего не выбрано';
 
   return (
@@ -208,6 +244,7 @@ function GuestList({
           <h2 className="t-label">Как это работает</h2>
           <ul className="how-it-works">
             <li className="t-small">Выбери подарок и нажми «Буду дарить это» — другие гости увидят, что он занят.</li>
+            <li className="t-small">Дорого одному — нажми «Подарим вместе», и другие гости смогут скинуться с тобой.</li>
             <li className="t-small">{owner} видит только «Занято», без имён.</li>
             <li className="t-small">Даришь что-то не из списка — добавь в «Я дарю другое».</li>
           </ul>
@@ -235,9 +272,62 @@ function GuestList({
           <div className="items">
             {items.data.map((item) => {
               const res = resByItem.get(item.id);
-              const mine = res?.uid === user.uid;
-              const who = nameByItem.get(item.id);
+              const det = detailsByItem.get(item.id);
               const busy = busyItem === item.id;
+
+              // Общий подарок
+              if (res?.group) {
+                const members = det?.members ?? [];
+                const joined = members.some((m) => m.uid === user.uid);
+                const organizer = members[0]?.uid === user.uid;
+                return (
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    mark={groupMark(members, user.uid)}
+                    actions={
+                      <>
+                        <GroupInfo item={item} members={members} note={det?.note ?? ''} noteBy={det?.noteBy ?? ''} myUid={user.uid} />
+                        {!joined ? (
+                          <button
+                            className="btn btn-primary btn-block"
+                            disabled={busy || !det}
+                            onClick={() => run(item, () => joinGroup(list.id, item.id, user.uid, name))}
+                          >
+                            Присоединиться
+                          </button>
+                        ) : organizer ? (
+                          <div className="item-actions">
+                            <button
+                              className="btn btn-sm"
+                              onClick={() => setEditing({ kind: 'groupNote', item, note: det?.note ?? '' })}
+                            >
+                              Изменить комментарий
+                            </button>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              disabled={busy}
+                              onClick={() => run(item, () => leaveGroup(list.id, item.id, user.uid))}
+                            >
+                              Выйти
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn btn-block"
+                            disabled={busy}
+                            onClick={() => run(item, () => leaveGroup(list.id, item.id, user.uid))}
+                          >
+                            Выйти из сбора
+                          </button>
+                        )}
+                      </>
+                    }
+                  />
+                );
+              }
+
+              const mine = res?.uid === user.uid;
               return (
                 <ItemCard
                   key={item.id}
@@ -246,14 +336,20 @@ function GuestList({
                     res
                       ? mine
                         ? { tone: 'mine', text: 'Это даришь ты' }
-                        : { tone: 'reserved', text: `Дарит ${who || 'кто-то из гостей'}` }
+                        : { tone: 'reserved', text: `Дарит ${det?.guestName || 'кто-то из гостей'}` }
                       : null
                   }
                   actions={
                     !res ? (
-                      <button className="btn btn-primary btn-block" onClick={() => reserve(item)} disabled={busy}>
-                        Буду дарить это
-                      </button>
+                      <div className="two-buttons">
+                        <button className="btn btn-primary" onClick={() => reserve(item)} disabled={busy}>
+                          Буду дарить это
+                        </button>
+                        <button className="btn" onClick={() => setEditing({ kind: 'startGroup', item })} disabled={busy}>
+                          <UsersIcon size={18} />
+                          Подарим вместе
+                        </button>
+                      </div>
                     ) : mine ? (
                       <button className="btn btn-block" onClick={() => cancel(item)} disabled={busy}>
                         Отменить бронь
@@ -306,6 +402,41 @@ function GuestList({
         )}
       </section>
 
+      {editing?.kind === 'startGroup' && (
+        <Sheet title="Подарим вместе" onClose={close}>
+          <GroupStartForm
+            item={editing.item}
+            ownerName={owner}
+            onCancel={close}
+            onSubmit={async (note) => {
+              const item = editing.item;
+              try {
+                await startGroup(list.id, item.id, user.uid, name, note);
+              } catch (e) {
+                if ((e as { code?: string }).code === 'permission-denied') {
+                  close();
+                  setError(`Ой, «${item.title}» только что забронировал кто-то другой. Выбери что-нибудь ещё.`);
+                  return;
+                }
+                throw e;
+              }
+              close();
+            }}
+          />
+        </Sheet>
+      )}
+      {editing?.kind === 'groupNote' && (
+        <Sheet title="Комментарий к сбору" onClose={close}>
+          <GroupNoteForm
+            initial={editing.note}
+            onCancel={close}
+            onSubmit={async (note) => {
+              await updateGroupNote(list.id, editing.item.id, note, name);
+              close();
+            }}
+          />
+        </Sheet>
+      )}
       {editing?.kind === 'newGift' && (
         <Sheet title="Я дарю другое" onClose={close}>
           <GiftForm

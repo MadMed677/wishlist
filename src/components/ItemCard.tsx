@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import type { Item } from '../types';
 import { hostOf, priorityLabel, safeUrl } from '../utils';
-import { CheckIcon, GiftIcon, LinkIcon, LockIcon } from './icons';
+import { CheckIcon, GiftIcon, LinkIcon, LockIcon, UsersIcon } from './icons';
 import { ExternalLink } from './ui';
 
 /** Состояние брони, которое показывается полосой сверху карточки. */
-export type ItemMark = { tone: 'reserved' | 'mine'; text: string } | null;
+export type ItemMark = { tone: 'reserved' | 'mine' | 'group'; text: string; icon?: 'lock' | 'check' | 'users' } | null;
 
 /** Карточка пункта вишлиста. Статус брони (`mark`) и кнопки передаются снаружи. */
 export function ItemCard({ item, mark, actions }: { item: Item; mark?: ItemMark; actions?: ReactNode }) {
@@ -47,9 +47,10 @@ export function ItemCard({ item, mark, actions }: { item: Item; mark?: ItemMark;
 
 /** Полоса статуса сверху карточки — одна для всех карточек (желания, «Я дарю другое», превью). */
 export function CardMark({ mark }: { mark: NonNullable<ItemMark> }) {
+  const icon = mark.icon ?? (mark.tone === 'mine' ? 'check' : mark.tone === 'group' ? 'users' : 'lock');
   return (
     <div className={`item-mark item-mark-${mark.tone} t-small`}>
-      {mark.tone === 'mine' ? <CheckIcon size={16} strokeWidth={2.4} /> : <LockIcon size={16} />}
+      {icon === 'check' ? <CheckIcon size={16} strokeWidth={2.4} /> : icon === 'users' ? <UsersIcon size={16} /> : <LockIcon size={16} />}
       <span>{mark.text}</span>
     </div>
   );

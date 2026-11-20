@@ -22,6 +22,8 @@
   --reserved-ink: #8f4706;
   --mine-soft: #ddf2e6;
   --mine-ink: #1a6640;
+  --group-soft: #eee8fd;
+  --group-ink: #5b38c2;
   --danger: #b8301e;
   --danger-soft: #fcebe8;
   --scrim: rgba(14, 19, 27, 0.48);
@@ -64,6 +66,8 @@
     --reserved-ink: #f2b46e;
     --mine-soft: #163024;
     --mine-ink: #86d6a8;
+    --group-soft: #2a2146;
+    --group-ink: #c3b0ff;
     --danger: #ff8b7b;
     --danger-soft: #3a1e1b;
     --scrim: rgba(0, 0, 0, 0.62);
@@ -89,6 +93,8 @@
   --reserved-ink: #f2b46e;
   --mine-soft: #163024;
   --mine-ink: #86d6a8;
+  --group-soft: #2a2146;
+  --group-ink: #c3b0ff;
   --danger: #ff8b7b;
   --danger-soft: #3a1e1b;
   --scrim: rgba(0, 0, 0, 0.62);

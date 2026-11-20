@@ -29,12 +29,23 @@ export interface Item extends ItemData {
 export interface Reservation {
   id: string; // = id пункта
   uid: string;
+  group: boolean; // общий подарок («Подарим вместе»)
+}
+
+export interface GroupMember {
+  uid: string;
+  name: string;
+  at: number; // когда присоединился, ms (для порядка; первый — организатор)
 }
 
 export interface ReservationDetail {
   id: string; // = id пункта
-  uid: string;
+  uid: string; // кто создал бронь / открыл сбор
   guestName: string;
+  group: boolean;
+  members: GroupMember[]; // по времени вступления; пусто для обычной брони
+  note: string; // комментарий для участников сбора
+  noteBy: string;
 }
 
 export interface GiftData {

@@ -1131,3 +1131,114 @@ button.chip {
     padding: var(--space-4);
   }
 }
+
+/* ---------- «Подарим вместе» ---------- */
+
+.item-group {
+  border-color: var(--group-ink);
+}
+
+.item-mark-group {
+  background: var(--group-soft);
+  color: var(--group-ink);
+}
+
+.two-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.two-buttons .btn {
+  padding: 0 var(--space-2);
+  font-size: 15px;
+  white-space: normal;
+  text-align: center;
+  line-height: 18px;
+}
+
+.group-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.group-people {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.avatars {
+  display: flex;
+}
+
+.avatar-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--group-soft);
+  color: var(--group-ink);
+  border: 2px solid var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-sm + .avatar-sm {
+  margin-left: -8px;
+}
+
+.avatar-me {
+  background: var(--group-ink);
+  color: var(--surface);
+}
+
+.group-note {
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.group-item {
+  padding: var(--space-3) 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.group-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.group-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: var(--group-soft);
+  color: var(--group-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* На узких телефонах иконка не помещается — оставляем только текст «Подарим вместе» */
+@media (max-width: 420px) {
+  .two-buttons .btn svg {
+    display: none;
+  }
+}

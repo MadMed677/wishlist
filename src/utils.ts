@@ -67,6 +67,35 @@ export function firstName(name: string): string {
   return name.trim().split(/\s+/)[0] || name;
 }
 
+/** «Боря», «Боря и Лена», «Боря, Лена и ещё 2». */
+export function joinNames(names: string[], max = 2): string {
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0];
+  if (names.length <= max) return `${names.slice(0, -1).join(', ')} и ${names[names.length - 1]}`;
+  return `${names.slice(0, max).join(', ')} и ещё ${names.length - max}`;
+}
+
+/** Достаём число из свободной цены: «≈ 60 000 ₸» → 60000, «45 тыс» → 45000. */
+export function parsePrice(raw: string): { amount: number; symbol: string } | null {
+  const s = raw.replace(/\u00a0|\u202f/g, ' ');
+  const m = s.match(/(\d[\d ]*(?:[.,]\d+)?)\s*(тыс|k|к)?/i);
+  if (!m) return null;
+  let amount = parseFloat(m[1].replace(/ /g, '').replace(',', '.'));
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  if (m[2]) amount *= 1000;
+  const symbol = s.includes('₽') ? '₽' : s.includes('$') ? '$' : s.includes('€') ? '€' : '₸';
+  return { amount, symbol };
+}
+
+/** Примерная доля на каждого: цена ÷ участников, округлено до сотни. */
+export function shareText(price: string, people: number): string | null {
+  const p = parsePrice(price);
+  if (!p || people < 1) return null;
+  const raw = p.amount / people;
+  const value = raw >= 1000 ? Math.round(raw / 100) * 100 : Math.round(raw);
+  return `${value.toLocaleString('ru-RU')} ${p.symbol}`;
+}
+
 // ---------- имя гостя ----------
 
 const NAME_KEY = 'wishlist.guestName';
