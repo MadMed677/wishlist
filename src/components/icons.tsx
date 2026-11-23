@@ -179,3 +179,11 @@ export const ShieldIcon = (p: P) => (
     <path d="M9 12l2 2 4-4" />
   </Icon>
 );
+
+export const QuestionIcon = (p: P) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" />
+    <path d="M12 17h.01" />
+  </Icon>
+);

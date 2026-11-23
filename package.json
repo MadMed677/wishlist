@@ -9,7 +9,7 @@
     "emulators": "npx firebase-tools emulators:start --only auth,firestore --project demo-wishlist",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test:rules": "npx --yes firebase-tools@15.37.0 emulators:exec --only firestore --project demo-wishlist \"node tests/rules/basic.test.mjs && node tests/rules/group.test.mjs\""
+    "test:rules": "npx --yes firebase-tools@15.37.0 emulators:exec --only firestore --project demo-wishlist \"node tests/rules/basic.test.mjs && node tests/rules/group.test.mjs && node tests/rules/questions.test.mjs\""
   },
   "dependencies": {
     "firebase": "^13.4.0",

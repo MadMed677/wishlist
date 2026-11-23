@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { createWishlist, useItems, useMyWishlists, useReservations } from '../api';
+import { createWishlist, useItems, useMyWishlists, useQuestions, useReservations } from '../api';
 import { useAuth } from '../auth';
 import { CakeIcon, ChevronRightIcon, GoogleIcon } from '../components/icons';
 import { CardMark } from '../components/ItemCard';
@@ -9,7 +9,7 @@ import { signInWithGoogle } from '../account';
 import { errorText, signOut, userDisplayName } from '../firebase';
 import { navigate } from '../router';
 import type { Wishlist } from '../types';
-import { countdown, firstName, formatDate, wishesCount } from '../utils';
+import { countdown, firstName, formatDate, plural, wishesCount } from '../utils';
 
 export function Home() {
   const { user } = useAuth();
@@ -185,9 +185,22 @@ function ListCard({ list }: { list: Wishlist }) {
           </span>
         )}
         <ListStats listId={list.id} />
+        <UnansweredChip listId={list.id} />
       </span>
       <ChevronRightIcon />
     </a>
+  );
+}
+
+/** «2 вопроса без ответа» — гости спрашивают, автору стоит заглянуть. */
+function UnansweredChip({ listId }: { listId: string }) {
+  const questions = useQuestions(listId);
+  const n = questions.data.filter((q) => !q.answer).length;
+  if (!n) return null;
+  return (
+    <span className="q-badge t-caption" style={{ alignSelf: 'flex-start', marginTop: 'var(--space-1)' }}>
+      {n} {plural(n, 'вопрос', 'вопроса', 'вопросов')} без ответа
+    </span>
   );
 }
 

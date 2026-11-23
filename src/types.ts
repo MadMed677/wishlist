@@ -61,3 +61,20 @@ export interface GuestGift extends GiftData {
   guestName: string;
   createdAt: Timestamp | null;
 }
+
+/** Вопрос гостя по подарку (itemId) или ко всему списку (itemId = null) и ответ автора. */
+export interface Question {
+  id: string;
+  itemId: string | null;
+  text: string;
+  answer: string; // '' — ещё нет ответа
+  answeredAt: number; // ms, 0 — нет ответа
+  createdAt: Timestamp | null;
+}
+
+/** Кто задал вопрос. Автор списка этого не видит (правила). */
+export interface QuestionAuthor {
+  id: string; // = id вопроса
+  uid: string;
+  guestName: string;
+}

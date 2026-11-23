@@ -8,7 +8,17 @@ import { ExternalLink } from './ui';
 export type ItemMark = { tone: 'reserved' | 'mine' | 'group'; text: string; icon?: 'lock' | 'check' | 'users' } | null;
 
 /** Карточка пункта вишлиста. Статус брони (`mark`) и кнопки передаются снаружи. */
-export function ItemCard({ item, mark, actions }: { item: Item; mark?: ItemMark; actions?: ReactNode }) {
+export function ItemCard({
+  item,
+  mark,
+  actions,
+  footer,
+}: {
+  item: Item;
+  mark?: ItemMark;
+  actions?: ReactNode;
+  footer?: ReactNode; // строка «Вопросы» внизу карточки
+}) {
   const url = safeUrl(item.url);
   const img = safeUrl(item.imageUrl);
   const [imgOk, setImgOk] = useState(true);
@@ -41,6 +51,7 @@ export function ItemCard({ item, mark, actions }: { item: Item; mark?: ItemMark;
         )}
         {actions && <div className="item-footer">{actions}</div>}
       </div>
+      {footer}
     </article>
   );
 }

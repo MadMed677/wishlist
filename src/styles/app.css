@@ -1412,3 +1412,216 @@ button.chip:focus-visible {
 .toast > span {
   flex: 1;
 }
+
+/* ---------- вопросы по подарку ---------- */
+
+/* Строка внизу карточки: «Задать вопрос» / «2 вопроса» */
+.q-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  min-height: 44px;
+  margin: 0 6px 6px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--primary-ink);
+  text-align: left;
+}
+
+.q-link:hover {
+  background: var(--surface-hover);
+}
+
+.q-link:active {
+  background: var(--surface-active);
+}
+
+.q-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.q-link svg {
+  flex-shrink: 0;
+}
+
+.q-link-text {
+  flex-grow: 1;
+}
+
+.q-link-muted {
+  color: var(--text-muted);
+}
+
+/* В блоке «Пожелания» — белая плашка */
+.q-link-wishes {
+  margin: 0;
+  padding: 0 var(--space-3);
+  background: var(--surface);
+}
+
+.q-link-wishes:hover {
+  background: var(--surface-hover);
+}
+
+.q-badge {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  color: var(--on-primary);
+  white-space: nowrap;
+}
+
+/* Автор: «2 вопроса без ответа» */
+.q-banner {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  width: 100%;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  padding: 14px var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: left;
+}
+
+.q-banner:hover {
+  background: var(--surface-hover);
+}
+
+.q-banner:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.q-banner > svg {
+  flex-shrink: 0;
+  color: var(--primary-ink);
+}
+
+.q-banner-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--primary-soft);
+  color: var(--primary-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.q-banner-text {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Шторка «Вопросы» */
+.q-subject {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.q-subject .t-item {
+  overflow-wrap: anywhere;
+}
+
+.q-hint {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  color: var(--text-muted);
+}
+
+.q-hint svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.q-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.q-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.q-item-open,
+.q-item-mine {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.q-item-open {
+  border-color: var(--primary);
+}
+
+.q-item-mine {
+  background: var(--surface-2);
+}
+
+.q-text {
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.q-answer {
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.q-answer .t-caption {
+  color: var(--primary-ink);
+}
+
+.q-form,
+.q-ask {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.q-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.q-form-actions .btn-primary {
+  flex-grow: 1;
+}
+
+.q-ask {
+  padding-top: var(--space-2);
+}

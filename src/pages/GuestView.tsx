@@ -14,6 +14,8 @@ import {
   updateGuestGift,
   useGuestGifts,
   useItems,
+  useQuestionAuthors,
+  useQuestions,
   useReservationDetails,
   useReservations,
 } from '../api';
@@ -21,6 +23,7 @@ import { GiftForm } from '../components/GiftForm';
 import { GroupInfo, GroupNoteForm, GroupStartForm, groupMark } from '../components/Group';
 import { GoogleIcon, LinkIcon, PlusIcon, ShieldIcon, UsersIcon } from '../components/icons';
 import { CardMark, ItemCard } from '../components/ItemCard';
+import { QuestionsLink, QuestionsPanel, scopeTitle, useSeenAnswers, type QuestionScope } from '../components/Questions';
 import { ErrorBox, ExternalLink, InAppHint, Sheet, Spinner } from '../components/ui';
 import { WishesCard } from '../components/Wishes';
 import { signInWithGoogle } from '../account';
@@ -206,6 +209,7 @@ type Editing =
   | { kind: 'gift'; gift: GuestGift }
   | { kind: 'startGroup'; item: Item }
   | { kind: 'groupNote'; item: Item; note: string }
+  | { kind: 'questions'; scope: QuestionScope }
   | null;
 
 function GuestList({
@@ -223,6 +227,9 @@ function GuestList({
   const reservations = useReservations(list.id);
   const details = useReservationDetails(list.id, true);
   const gifts = useGuestGifts(list.id, true);
+  const questions = useQuestions(list.id);
+  const questionAuthors = useQuestionAuthors(list.id, true);
+  const seen = useSeenAnswers();
   const [busyItem, setBusyItem] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<Editing>(null);
@@ -230,6 +237,31 @@ function GuestList({
   const owner = firstName(list.ownerName) || 'Автор';
 
   const resByItem = new Map(reservations.data.map((r) => [r.id, r]));
+
+  // Вопросы: мои — по записям «кто спросил»; «Артём ответил» — новый ответ на мой вопрос.
+  const myQuestionIds = new Set(questionAuthors.data.filter((a) => a.uid === user.uid).map((a) => a.id));
+  const questionsFor = (itemId: string | null) => questions.data.filter((q) => q.itemId === itemId);
+  const hasNewAnswer = (itemId: string | null) => questionsFor(itemId).some((q) => myQuestionIds.has(q.id) && seen.isNew(q));
+  const questionsLink = (
+    itemId: string | null,
+    onOpen: () => void,
+    extra: { emptyText?: string; prefix?: string; className?: string } = {},
+  ) => (
+    <QuestionsLink
+      role="guest"
+      questions={questionsFor(itemId)}
+      ownerName={owner}
+      hasNewAnswer={hasNewAnswer(itemId)}
+      onOpen={onOpen}
+      {...extra}
+    />
+  );
+  const listQuestionsLink = questionsLink(null, () => setEditing({ kind: 'questions', scope: { kind: 'list' } }), {
+    emptyText: 'Задать вопрос к списку',
+    prefix: 'Вопросы к списку',
+    className: 'q-link q-link-wishes',
+  });
+  const itemFooter = (item: Item) => questionsLink(item.id, () => setEditing({ kind: 'questions', scope: { kind: 'item', item } }));
   const detailsByItem = new Map(details.data.map((d) => [d.id, d]));
 
   // permission-denied бывает и при гонке (кто-то успел раньше), и когда на сервере старые правила.
@@ -305,7 +337,11 @@ function GuestList({
       <aside className="list-aside">
         <ListTitle list={list} showOwner />
         {user.isAnonymous && <SaveAccountBanner />}
-        {list.wishes && <WishesCard title={`Пожелания · ${owner}`} text={list.wishes} />}
+        {list.wishes ? (
+          <WishesCard title={`Пожелания · ${owner}`} text={list.wishes} footer={listQuestionsLink} />
+        ) : (
+          <section className="wishes">{listQuestionsLink}</section>
+        )}
 
         <section className="card row-between desktop-only">
           <span className="stack" style={{ gap: 2 }}>
@@ -376,6 +412,7 @@ function GuestList({
                     key={item.id}
                     item={item}
                     mark={groupMark(members, user.uid)}
+                    footer={itemFooter(item)}
                     actions={
                       <>
                         <GroupInfo item={item} members={members} note={det?.note ?? ''} noteBy={det?.noteBy ?? ''} myUid={user.uid} />
@@ -423,6 +460,7 @@ function GuestList({
                 <ItemCard
                   key={item.id}
                   item={item}
+                  footer={itemFooter(item)}
                   mark={
                     res
                       ? mine
@@ -508,6 +546,22 @@ function GuestList({
               }
               close();
             }}
+          />
+        </Sheet>
+      )}
+      {editing?.kind === 'questions' && (
+        <Sheet title={scopeTitle(editing.scope)} onClose={close}>
+          <QuestionsPanel
+            listId={list.id}
+            role="guest"
+            scope={editing.scope}
+            questions={questions.data}
+            authors={questionAuthors.data}
+            items={items.data}
+            ownerName={owner}
+            uid={user.uid}
+            guestName={name}
+            onSeen={seen.markSeen}
           />
         </Sheet>
       )}

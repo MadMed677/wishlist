@@ -1,34 +1,63 @@
 import { useCallback, useState, type FormEvent } from 'react';
-import { addItem, deleteItem, updateItem, updateWishlist, useItems, useReservations } from '../api';
+import { addItem, deleteItem, updateItem, updateWishlist, useItems, useQuestions, useReservations } from '../api';
 import { CheckIcon, ChevronLeftIcon, CopyIcon, PlusIcon, ShareIcon } from '../components/icons';
 import { ItemCard } from '../components/ItemCard';
 import { ItemForm } from '../components/ItemForm';
+import { QuestionsLink, QuestionsPanel, scopeTitle, UnansweredBanner, type QuestionScope } from '../components/Questions';
 import { ErrorBox, Sheet, Spinner } from '../components/ui';
 import { WishesCard, WishesEmpty, WishesForm } from '../components/Wishes';
 import { errorText } from '../firebase';
 import type { Item, Wishlist } from '../types';
-import { shareUrl, wishesCount } from '../utils';
+import { firstName, shareUrl, wishesCount } from '../utils';
 import { ListTitle } from './ListPage';
 
-type Editing = { kind: 'new' } | { kind: 'item'; item: Item } | { kind: 'list' } | { kind: 'wishes' } | null;
+type Editing =
+  | { kind: 'new' }
+  | { kind: 'item'; item: Item }
+  | { kind: 'list' }
+  | { kind: 'wishes' }
+  | { kind: 'questions'; scope: QuestionScope }
+  | null;
 
 export function OwnerView({ list }: { list: Wishlist }) {
   const items = useItems(list.id);
   const reservations = useReservations(list.id);
+  const questions = useQuestions(list.id);
   const reserved = new Set(reservations.data.map((r) => r.id));
+  const questionsFor = (itemId: string | null) => questions.data.filter((q) => q.itemId === itemId);
+  const openQuestions = (scope: QuestionScope) => setEditing({ kind: 'questions', scope });
+  const listQuestions = questionsFor(null);
+  const listQuestionsLink = (
+    <QuestionsLink
+      role="owner"
+      questions={listQuestions}
+      ownerName=""
+      prefix="Вопросы к списку"
+      className="q-link q-link-wishes"
+      onOpen={() => openQuestions({ kind: 'list' })}
+    />
+  );
   const [editing, setEditing] = useState<Editing>(null);
   const [error, setError] = useState('');
   const close = useCallback(() => setEditing(null), []);
 
   const remove = async (item: Item) => {
     const isReserved = reserved.has(item.id);
+    const itemQuestions = questionsFor(item.id);
     const msg = isReserved
       ? `Удалить «${item.title}»? Его уже кто-то забронировал — бронь тоже пропадёт.`
-      : `Удалить «${item.title}»?`;
+      : itemQuestions.length
+        ? `Удалить «${item.title}»? Вопросы гостей к нему тоже удалятся.`
+        : `Удалить «${item.title}»?`;
     if (!confirm(msg)) return;
     setError('');
     try {
-      await deleteItem(list.id, item.id, isReserved);
+      await deleteItem(
+        list.id,
+        item.id,
+        isReserved,
+        itemQuestions.map((q) => q.id),
+      );
     } catch (e) {
       setError(errorText(e));
     }
@@ -45,6 +74,7 @@ export function OwnerView({ list }: { list: Wishlist }) {
           Мои вишлисты
         </a>
         <ListTitle list={list} showOwner={false} />
+        <UnansweredBanner questions={questions.data} items={items.data} onOpen={() => openQuestions({ kind: 'unanswered' })} />
         <ShareBox listId={list.id} title={list.title} />
         {list.wishes ? (
           <WishesCard
@@ -55,10 +85,18 @@ export function OwnerView({ list }: { list: Wishlist }) {
                 Изменить
               </button>
             }
-            footer={<span className="t-small muted">Гости видят это над списком.</span>}
+            footer={
+              <>
+                <span className="t-small muted">Гости видят это над списком.</span>
+                {listQuestionsLink}
+              </>
+            }
           />
         ) : (
-          <WishesEmpty onWrite={() => setEditing({ kind: 'wishes' })} />
+          <>
+            <WishesEmpty onWrite={() => setEditing({ kind: 'wishes' })} />
+            {listQuestions.length > 0 && <section className="wishes">{listQuestionsLink}</section>}
+          </>
         )}
         <div className="row-between desktop-only" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
           <span className="t-small muted">
@@ -106,6 +144,14 @@ export function OwnerView({ list }: { list: Wishlist }) {
                 key={item.id}
                 item={item}
                 mark={reserved.has(item.id) ? { tone: 'reserved', text: 'Занято' } : null}
+                footer={
+                  <QuestionsLink
+                    role="owner"
+                    questions={questionsFor(item.id)}
+                    ownerName=""
+                    onOpen={() => openQuestions({ kind: 'item', item })}
+                  />
+                }
                 actions={
                   <div className="item-actions">
                     <button className="btn btn-sm" onClick={() => setEditing({ kind: 'item', item })}>
@@ -161,6 +207,19 @@ export function OwnerView({ list }: { list: Wishlist }) {
               await updateWishlist(list.id, { wishes });
               close();
             }}
+          />
+        </Sheet>
+      )}
+      {editing?.kind === 'questions' && (
+        <Sheet title={scopeTitle(editing.scope)} onClose={close}>
+          <QuestionsPanel
+            listId={list.id}
+            role="owner"
+            scope={editing.scope}
+            questions={questions.data}
+            items={items.data}
+            ownerName={firstName(list.ownerName)}
+            uid={list.ownerUid}
           />
         </Sheet>
       )}

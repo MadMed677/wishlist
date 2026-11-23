@@ -17,7 +17,17 @@ import {
   type Query,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { GiftData, GuestGift, Item, ItemData, Reservation, ReservationDetail, Wishlist } from './types';
+import type {
+  GiftData,
+  GuestGift,
+  Item,
+  ItemData,
+  Question,
+  QuestionAuthor,
+  Reservation,
+  ReservationDetail,
+  Wishlist,
+} from './types';
 
 // ---------- пути ----------
 
@@ -154,6 +164,32 @@ export function useGuestGifts(listId: string, enabled: boolean): Live<GuestGift[
   return { ...live, data: [...live.data].sort((a, b) => millis(a.createdAt, Infinity) - millis(b.createdAt, Infinity)) };
 }
 
+/** Вопросы по подарку и к списку — видят все, включая автора. По времени: старые сверху. */
+export function useQuestions(listId: string): Live<Question[]> {
+  const live = useLiveQuery(
+    sub(listId, 'questions'),
+    (id, d): Question => ({
+      id,
+      itemId: typeof d.itemId === 'string' ? d.itemId : null,
+      text: d.text ?? '',
+      answer: d.answer ?? '',
+      answeredAt: d.answer ? millis(d.answeredAt ?? null, 1) : 0,
+      createdAt: d.createdAt ?? null,
+    }),
+    [listId],
+  );
+  return { ...live, data: [...live.data].sort((a, b) => millis(a.createdAt, Infinity) - millis(b.createdAt, Infinity)) };
+}
+
+/** Только для гостей: кто задал вопрос. */
+export function useQuestionAuthors(listId: string, enabled: boolean): Live<QuestionAuthor[]> {
+  return useLiveQuery(
+    enabled ? sub(listId, 'questionAuthors') : null,
+    (id, d): QuestionAuthor => ({ id, uid: d.uid, guestName: d.guestName ?? '' }),
+    [listId, enabled],
+  );
+}
+
 function millis(t: { toMillis(): number } | null, fallback = 0): number {
   return t ? t.toMillis() : fallback;
 }
@@ -192,13 +228,17 @@ export function updateItem(listId: string, itemId: string, data: ItemData) {
   return updateDoc(doc(sub(listId, 'items'), itemId), { ...data });
 }
 
-/** Удаляет пункт, а если он забронирован — ещё и бронь с деталями, одним batch-ом. */
-export function deleteItem(listId: string, itemId: string, reserved: boolean) {
+/** Удаляет пункт, а заодно его бронь с деталями и вопросы к нему — одним batch-ом. */
+export function deleteItem(listId: string, itemId: string, reserved: boolean, questionIds: string[] = []) {
   const batch = writeBatch(db);
   batch.delete(doc(sub(listId, 'items'), itemId));
   if (reserved) {
     batch.delete(doc(sub(listId, 'reservations'), itemId));
     batch.delete(doc(sub(listId, 'reservationDetails'), itemId));
+  }
+  for (const id of questionIds) {
+    batch.delete(doc(sub(listId, 'questions'), id));
+    batch.delete(doc(sub(listId, 'questionAuthors'), id));
   }
   return batch.commit();
 }
@@ -294,4 +334,33 @@ export function updateGuestGift(listId: string, giftId: string, data: GiftData) 
 
 export function deleteGuestGift(listId: string, giftId: string) {
   return deleteDoc(doc(sub(listId, 'guestGifts'), giftId));
+}
+
+// ---------- вопросы по подарку ----------
+
+/** Гость задаёт вопрос: сам вопрос (виден всем) + «кто спросил» (только гостям), одним batch-ом. */
+export function askQuestion(listId: string, itemId: string | null, uid: string, guestName: string, text: string) {
+  const ref = doc(sub(listId, 'questions'));
+  const batch = writeBatch(db);
+  batch.set(ref, { itemId, text, answer: null, createdAt: serverTimestamp() });
+  batch.set(doc(sub(listId, 'questionAuthors'), ref.id), { uid, guestName });
+  return batch.commit();
+}
+
+/** Спросивший правит текст, пока нет ответа. */
+export function editQuestion(listId: string, questionId: string, text: string) {
+  return updateDoc(doc(sub(listId, 'questions'), questionId), { text, editedAt: serverTimestamp() });
+}
+
+/** Удалить вопрос (спросивший или автор списка) вместе с записью «кто спросил». */
+export function deleteQuestion(listId: string, questionId: string) {
+  const batch = writeBatch(db);
+  batch.delete(doc(sub(listId, 'questions'), questionId));
+  batch.delete(doc(sub(listId, 'questionAuthors'), questionId));
+  return batch.commit();
+}
+
+/** Автор отвечает или меняет ответ. */
+export function answerQuestion(listId: string, questionId: string, answer: string) {
+  return updateDoc(doc(sub(listId, 'questions'), questionId), { answer, answeredAt: serverTimestamp() });
 }

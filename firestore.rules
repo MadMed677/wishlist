@@ -64,6 +64,19 @@ service cloud.firestore {
       return data.guestName is string && data.guestName.size() > 0 && data.guestName.size() <= 60;
     }
 
+    function questionAuthorPath(listId, qId) {
+      return /databases/$(database)/documents/wishlists/$(listId)/questionAuthors/$(qId);
+    }
+
+    function validQuestionText(data) {
+      return data.text is string && data.text.size() > 0 && data.text.size() <= 500;
+    }
+
+    // Текущий пользователь задал вопрос qId (запись о нём — в questionAuthors).
+    function isAsker(listId, qId) {
+      return isGuest(listId) && get(questionAuthorPath(listId, qId)).data.uid == request.auth.uid;
+    }
+
     match /wishlists/{listId} {
       allow read: if signedIn();
 
@@ -186,6 +199,46 @@ service cloud.firestore {
           && optString(request.resource.data, 'url', 2000)
           && optString(request.resource.data, 'price', 50);
         allow delete: if isGuest(listId) && resource.data.uid == request.auth.uid;
+      }
+
+      // Вопросы по подарку (itemId) или ко всему списку (itemId == null) и ответ автора.
+      // Видят все, включая автора. Кто спросил — в questionAuthors, автор этого НЕ видит.
+      match /questions/{qId} {
+        allow read: if signedIn();
+        allow create: if isGuest(listId)
+          && request.resource.data.keys().hasOnly(['itemId', 'text', 'answer', 'createdAt'])
+          && validQuestionText(request.resource.data)
+          && request.resource.data.get('answer', null) == null
+          && (request.resource.data.get('itemId', null) == null
+            || (request.resource.data.itemId is string
+              && exists(/databases/$(database)/documents/wishlists/$(listId)/items/$(request.resource.data.itemId))))
+          // запись «кто спросил» создаётся тем же batch-ом
+          && getAfter(questionAuthorPath(listId, qId)).data.uid == request.auth.uid;
+        allow update: if
+          // автор отвечает, меняет или убирает ответ
+          (isOwner(listId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answer', 'answeredAt'])
+            && (request.resource.data.get('answer', null) == null
+              || (request.resource.data.answer is string
+                && request.resource.data.answer.size() > 0
+                && request.resource.data.answer.size() <= 1000)))
+          // спросивший правит текст, пока нет ответа
+          || (isAsker(listId, qId)
+            && resource.data.get('answer', null) == null
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'editedAt'])
+            && validQuestionText(request.resource.data));
+        allow delete: if isOwner(listId) || isAsker(listId, qId);
+      }
+
+      // Кто задал вопрос. Автор НЕ видит (но может удалить вместе с вопросом).
+      match /questionAuthors/{qId} {
+        allow read: if isGuest(listId);
+        allow create: if isGuest(listId)
+          && request.resource.data.keys().hasOnly(['uid', 'guestName'])
+          && request.resource.data.uid == request.auth.uid
+          && validGuestName(request.resource.data)
+          && existsAfter(/databases/$(database)/documents/wishlists/$(listId)/questions/$(qId));
+        allow delete: if isOwner(listId) || (signedIn() && resource.data.uid == request.auth.uid);
       }
     }
   }
